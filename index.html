@@ -1,0 +1,1663 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Human Show</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one 16:9 stage centred on black, everything placed in stage percentages so the drawings line up at any size. Single committed dark frame. */
+:root{
+  --black:#000; --ink:#2b3a47; --box:#e4eff8; --box-edge:#9fd6f2; --leaf:#88a070;
+  --meow:#7fbfe3; --mmm:#f2a7b0; --mdm:#e8a93c; --mm:#7fb36a;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{margin:0;background:var(--black);color:var(--ink);font-family:var(--font);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+.stage{position:relative;width:min(100vw,177.78vh);aspect-ratio:16/9;max-width:100%;overflow:hidden;container-type:inline-size;background:#000;user-select:none;-webkit-user-select:none}
+.scene{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .6s,visibility 0s .6s}
+.scene.on{opacity:1;visibility:visible;transition:opacity .6s}
+.bg.swap{pointer-events:none}
+.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;max-width:none}
+.bg.swap{transition:opacity .5s}
+
+.hot{position:absolute;cursor:pointer;border-radius:40%;
+  background:radial-gradient(ellipse at center,rgba(255,255,240,.32),rgba(255,255,240,0) 70%);opacity:0;transition:opacity .25s}
+.hot:hover,.hot:focus-visible{opacity:1;outline:none}
+.hot[hidden]{display:none}
+
+.arrow{position:absolute;top:50%;transform:translateY(-50%);width:4.2cqw;height:4.2cqw;border:0;padding:0;cursor:pointer;
+  background:transparent;display:grid;place-items:center;animation:nudge 1.6s ease-in-out infinite}
+.arrow svg{width:38%;height:38%}
+.arrow.r{right:1.6cqw} .arrow.l{left:1.6cqw;animation-name:nudgeL}
+.arrow:focus-visible{outline:.2cqw solid #fff;outline-offset:.3cqw}
+@keyframes nudge{50%{transform:translate(.5cqw,-50%)}}
+@keyframes nudgeL{50%{transform:translate(-.5cqw,-50%)}}
+
+.cal{position:absolute;left:82.4%;top:13.6%;width:4.4%;height:6%;background:#dfdedc;box-shadow:0 0 .35cqw .3cqw #dfdedc;border-radius:.3cqw;pointer-events:none}
+.calimg{position:absolute;max-width:none;height:auto;pointer-events:none}
+.hint{position:absolute;left:50%;transform:translateX(-50%);font-weight:500;font-size:1.15cqw;letter-spacing:.02em;color:#fff;
+  text-shadow:0 .08cqw .3cqw rgba(0,0,0,.35);white-space:nowrap;pointer-events:none;transition:opacity .4s}
+.knock{position:absolute;font-weight:700;font-size:1.8cqw;color:#fff;text-shadow:0 .15cqw .5cqw rgba(0,0,0,.4);pointer-events:none;animation:pop .7s ease-out forwards}
+@keyframes pop{0%{opacity:0;transform:translateY(0) scale(.8)}20%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:translateY(-3cqw)}}
+.shake{animation:shake .25s}
+@keyframes shake{25%{transform:translateX(-.25cqw)}75%{transform:translateX(.25cqw)}}
+
+/* window: full green */
+.pan{position:absolute;left:0;top:0;width:100%;height:auto;max-width:none;transform:translateY(-61.3%);will-change:transform}
+.streetTap{position:absolute;inset:0;cursor:pointer}
+.streetTap.center{inset:25% 30%;border-radius:50%;background:radial-gradient(ellipse at center,rgba(255,255,240,.28),rgba(255,255,240,0) 70%);opacity:0;transition:opacity .3s}
+.streetTap.center:hover,.streetTap.center:focus-visible{opacity:1;outline:none}
+#hall{background:#000;--mx:50%;--my:55%;--r:0px}
+#hall.explore{cursor:none}
+.lit{position:absolute;inset:0;background:rgba(255,246,232,.05);
+  -webkit-mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),#000 0 30%,rgba(0,0,0,.5) 62%,transparent 100%);
+          mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),#000 0 30%,rgba(0,0,0,.5) 62%,transparent 100%)}
+.world{position:absolute;top:0;left:0;width:300%;height:100%;transform:translateX(-33.333%);transition:transform 1.8s cubic-bezier(.45,0,.25,1)}
+.bars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sil{position:absolute;width:auto;max-width:none;pointer-events:none;user-select:none}
+.peek{position:absolute;top:50%;width:0;height:0;border-top:.7cqw solid transparent;border-bottom:.7cqw solid transparent;opacity:0;transition:opacity 1s;pointer-events:none;transform:translateY(-50%)}
+.peek.l{left:1.4cqw;border-right:1cqw solid rgba(255,255,255,.22)}
+.peek.r{right:1.4cqw;border-left:1cqw solid rgba(255,255,255,.22)}
+#hall.explore .peek.on{opacity:1}
+.sub{position:absolute;left:0;right:0;bottom:16%;z-index:31;text-align:center;color:#fff;font-weight:500;font-size:1.7cqw;letter-spacing:.02em;
+  opacity:0;transition:opacity .8s;pointer-events:none;text-shadow:0 .1cqw .6cqw rgba(0,0,0,.6)}
+.sub.on{opacity:1}
+.talk.bare .who{display:none}
+.talk.bare .box{padding-left:6%;padding-right:6%}
+.talk.nobox .box{display:none}
+.square{position:absolute;top:0;left:50%;height:100%;width:auto;max-width:none;transform:translateX(-50%);transition:opacity .25s;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+#doorlight{background:#000}
+#judge,#jcage{background:#030305}
+.aud{position:absolute;left:0;right:0;top:3%;height:58%;--b:.85}
+.pair{position:absolute;display:flex;gap:calc(var(--s)*.6);transform:translate(-50%,-50%);opacity:calc(var(--b) * var(--depth));transition:opacity 1s}
+.eye{width:var(--s);height:calc(var(--s)*.6);border-radius:50%;position:relative;
+  background:radial-gradient(circle at 50% 45%,#fff 0%,var(--c) 35%,color-mix(in srgb,var(--c) 55%,#000) 100%);
+  box-shadow:0 0 calc(var(--s)*.5) calc(var(--s)*.12) color-mix(in srgb,var(--c) 70%,transparent),0 0 calc(var(--s)*1.6) calc(var(--s)*.3) color-mix(in srgb,var(--c) 30%,transparent);transition:transform .15s}
+.eye::after{content:"";position:absolute;left:50%;top:6%;bottom:6%;width:var(--pupil,22%);transform:translateX(-50%);background:#050505;border-radius:50%;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.pair.blink .eye{transform:scaleY(.08)}
+.aud.wide{--pupil:62%} .aud.slit{--pupil:7%}
+.aud .eye{filter:url(#roughSm)}
+.aud .eye{background:url(img/grain.png),radial-gradient(circle at 50% 45%,#fff 0%,var(--c) 35%,color-mix(in srgb,var(--c) 55%,#000) 100%);background-size:1.2cqw,auto;background-blend-mode:soft-light,normal}
+.pool{position:absolute;left:-20%;right:-20%;bottom:-6%;height:46%;pointer-events:none;
+  background:radial-gradient(ellipse 42% 62% at 50% 100%,#fff4d0 0%,#ffcf73 22%,#e09a3a99 46%,#5a3a1033 70%,transparent 82%)}
+.tedge{position:absolute;left:0;right:0;bottom:32%;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,#ffcf7366 30%,#ffcf73aa 50%,#ffcf7366 70%,transparent)}
+.jhud{position:absolute;top:1.6cqw;left:2cqw;display:flex;flex-direction:column;gap:.4cqw;font-size:.85cqw;letter-spacing:.16em;text-transform:uppercase;color:#6e6559;z-index:3}
+.jhud b{color:#f3ecdf;font-weight:600;font-variant-numeric:tabular-nums;font-size:1.2cqw;letter-spacing:.04em}
+.jdelta{display:inline-block;margin-left:.6cqw;font-size:1cqw;opacity:0;transition:opacity .3s}
+.jdelta.show{opacity:1}
+.jnarr{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:60%;text-align:center;z-index:3}
+.jnarr::before{content:"";position:absolute;left:-8%;right:-8%;top:-55%;bottom:-55%;z-index:-1;pointer-events:none;background:radial-gradient(ellipse closest-side,rgba(3,3,5,.92) 30%,rgba(3,3,5,.6) 60%,transparent 100%)}
+.jline{margin:0;font-weight:400;font-style:italic;font-size:2.3cqw;line-height:1.35;color:#f3ecdf;text-wrap:balance;opacity:0;filter:blur(6px);transform:translateY(6px);
+  transition:opacity 1.1s,filter 1.1s,transform 1.1s;text-shadow:0 .1cqw .6cqw #000}
+.jline.in{opacity:1;filter:none;transform:none}
+.jreact{font-size:.95cqw;letter-spacing:.14em;text-transform:uppercase;margin-top:1.1cqw;min-height:1.4em;color:#9a8f80}
+.jreact.good{color:#b7f36a} .jreact.bad{color:#e8706c}
+.jtimer{width:40%;height:2px;margin:1.4cqw auto 0;background:#ffffff14;overflow:hidden;border-radius:1px;visibility:hidden}
+.jtimer.on{visibility:visible}
+.jtimer i{display:block;height:100%;background:#ffcf73;transform-origin:left}
+.jchoices{position:absolute;left:50%;bottom:2.2cqw;transform:translateX(-50%);width:44%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8cqw;z-index:3}
+.jchoices.single{grid-template-columns:minmax(0,17cqw);justify-content:center}
+.jbtn{font:inherit;font-weight:500;font-size:1cqw;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;color:#2a1b08;background:#ffe2a6e6;border:1px solid #fff0cc;border-radius:.3cqw;padding:1cqw .5cqw;transition:background .2s}
+.jbtn:hover:not(:disabled){background:#fff0cc}
+.jbtn:focus-visible{outline:2px solid #f3ecdf;outline-offset:3px}
+.jbtn:disabled{opacity:.4;cursor:default}
+.jslip{position:absolute;right:2cqw;top:5cqw;width:21cqw;background:transparent;isolation:isolate;color:#24201a;padding:1cqw 1.2cqw 1.2cqw;border-radius:2px;z-index:4;
+  transform:translateX(130%) rotate(2deg);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.jslip.show{transform:translateX(0) rotate(-1.5deg)}
+.jslip::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:2px;filter:url(#rough) drop-shadow(0 .8cqw 1.4cqw rgba(0,0,0,.7));
+  background:url(img/grain.png),linear-gradient(170deg,#f6f0e3,#ece3d0);background-size:7cqw,auto;background-blend-mode:multiply,normal}
+.jslip small{display:block;font-size:.8cqw;letter-spacing:.16em;text-transform:uppercase;color:#7a7062;margin-bottom:.5cqw}
+.jslip p{margin:0;font-size:1.35cqw;line-height:1.35}
+.jpts{margin-top:.6cqw;font-size:.95cqw;letter-spacing:.08em;color:#7a7062}
+.jnote{margin-top:.6cqw;font-size:.85cqw;color:#7a7062;line-height:1.5}
+#jcage{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.6cqw}
+#jcage.on{display:flex}
+.cline{margin:0;font-style:italic;font-size:2cqw;color:#f3ecdf;opacity:0;transition:opacity 1.2s}
+.cline.in{opacity:1}
+.hot.gap{background:radial-gradient(ellipse at center,rgba(255,220,140,.35),rgba(255,220,140,0) 70%)}
+#corridor{background:#050404}
+.cwall{position:absolute;inset:0;background:linear-gradient(#0b0908,#141110 62%,#0a0807 62.4%,#060505)}
+.pic{position:absolute;width:11.51%;height:21.67%;cursor:pointer;transition:transform .35s cubic-bezier(.2,.8,.2,1),filter .35s;z-index:2}
+.pic::before{content:"";position:absolute;inset:-1%;background:#ece2cc;filter:url(#roughSm)}
+.pic::after{content:"";position:absolute;inset:0;background:url(img/grain.png);background-size:5cqw;mix-blend-mode:multiply;opacity:.16;pointer-events:none}
+.pic img{position:absolute;inset:5%;width:90%;height:90%;object-fit:contain;max-width:none}
+.pic:hover,.pic:focus-visible{transform:translateY(-.3cqw);filter:drop-shadow(0 0 1.2cqw rgba(255,226,160,.45));outline:none}
+.pic .plate{top:calc(100% + 1.1cqw);font-size:.8cqw}
+.frame{position:relative;margin:0;aspect-ratio:1}
+.turn{position:absolute;left:50%;bottom:4cqw;transform:translateX(-50%);width:4.2cqw;height:4.2cqw;border:0;padding:0;background:transparent;cursor:pointer;z-index:6;animation:bob 1.4s ease-in-out infinite}
+.turn svg{width:45%;height:45%;opacity:.85}
+.turn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@keyframes bob{50%{transform:translate(-50%,.5cqw)}}
+.zoom{position:absolute;inset:0;z-index:10;display:grid;place-items:center;background:rgba(3,2,2,.82);opacity:0;pointer-events:none;transition:opacity .45s;cursor:pointer}
+.zoom.on{opacity:1;pointer-events:auto}
+.frame.big{width:auto;height:62%;transform:scale(.6);transition:transform .55s cubic-bezier(.2,.8,.2,1)}
+.zoom.on .frame.big{transform:none}
+.frame.big .plate{font-size:1.5cqw;top:calc(100% + 2.6cqw)}
+.wood{position:absolute;inset:-6%;z-index:-1;border-radius:2px;filter:url(#rough);
+  background:url(img/grain.png),linear-gradient(135deg,#cbb48c,#a78e68 60%,#bca37b);background-size:9cqw,auto;background-blend-mode:soft-light,normal;
+  box-shadow:0 0 4cqw 1cqw rgba(255,214,150,.18)}
+.mat{position:absolute;inset:0;overflow:hidden;filter:url(#roughSm);background:#ece2cc}
+.mat img{position:absolute;inset:5%;width:90%;height:90%;object-fit:contain;max-width:none}
+.mat::after{content:"";position:absolute;inset:0;background:url(img/grain.png);background-size:6cqw;mix-blend-mode:multiply;opacity:.12;pointer-events:none}
+.aud2{top:0;height:100%;--b:.75}
+.fzoom{position:absolute;inset:0;transform-origin:65% 26%;transition:transform 1.6s cubic-bezier(.5,0,.3,1),opacity .8s .9s}
+.fzoom.in{transform:scale(3.4);opacity:0}
+/* the eyes come only after the close-up, then all turn to look at you */
+.aud2{opacity:0;transition:opacity 1.8s}
+.aud2.on{opacity:1}
+.aud2.stare{--b:1;--pupil:66%}
+.aud2 .eye::after{left:calc(50% + var(--lx,0) * 26%);transition:width .7s cubic-bezier(.2,.8,.2,1),left .5s cubic-bezier(.5,0,.2,1)}
+.aud2.stare .pair{--lx:0!important}
+#fallen.whip .fzoom{transform:translateX(75%) scale(1.15);filter:blur(1.4cqw);opacity:0;transition:transform .55s cubic-bezier(.6,0,1,1),filter .55s,opacity .5s .1s}
+.runbtn{position:absolute;left:50%;top:50%;z-index:8;transform:translate(-50%,-50%);border:0;padding:0 2cqw;background:none;cursor:pointer;font:inherit;font-weight:700;font-size:11cqw;letter-spacing:.08em;line-height:1;
+  color:#f3ecdf;text-shadow:0 0 2.4cqw rgba(230,60,40,.55),0 .3cqw 1cqw #000;filter:url(#rough);opacity:0;transition:opacity .35s}
+.runbtn.on{opacity:1;animation:runpulse .8s ease-in-out infinite}
+.runbtn:focus-visible{outline:2px solid #fff;outline-offset:4px}
+@keyframes runpulse{50%{transform:translate(-50%,-50%) scale(1.07)}}
+/* running away */
+#run{background:#000}
+.runview{position:absolute;inset:-6%;background:#000}
+.runview.going{animation:jog .28s ease-in-out infinite alternate}
+.runview.stop,.runview.stop .wall3d{animation-play-state:paused}
+@keyframes jog{from{transform:translate(-.6cqw,0) rotate(-.5deg)}to{transform:translate(.6cqw,1.5cqw) rotate(.5deg)}}
+/* the corridor wall runs along your right, out to a vanishing point ahead */
+.hall3d{position:absolute;inset:0;overflow:hidden;perspective:40cqw;perspective-origin:42% 48%}
+.wall3d{position:absolute;top:0;height:100%;width:400cqw;left:calc(56% - 400cqw);transform-origin:100% 50%;transform:translateZ(34cqw) rotateY(-90deg);
+  background-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.9) 55%,rgba(0,0,0,.45) 100%),url(img/corridor-bg.jpg);
+  background-size:100% 100%,auto 100%;background-repeat:no-repeat,repeat-x;background-position:0 0,0 0}
+.runview.going .wall3d{animation:wallrun .9s linear infinite}
+@keyframes wallrun{to{background-position:0 0,112cqw 0}}
+.vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 64% 60% at 45% 50%,transparent 30%,#000 100%)}
+/* the box: in the middle of the corridor once you stop */
+.cbox{position:absolute;left:44%;top:66%;width:17cqw;transform:translate(-50%,-50%);opacity:0;cursor:pointer;z-index:3;filter:brightness(.72);transition:opacity 1s,filter .3s}
+.cbox img{display:block;width:100%;height:auto;position:relative}
+.cbox::before{content:"";position:absolute;left:-12%;right:-12%;bottom:-9%;height:22%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.85),transparent)}
+.cbox.near{opacity:1}
+.cbox.near:hover,.cbox.near:focus-visible{filter:brightness(1);outline:none}
+.cbox .hidetag{position:absolute;left:50%;bottom:calc(100% + 1.2cqw);transform:translateX(-50%);font-weight:600;font-size:1.6cqw;letter-spacing:.2em;color:#f3ecdf;
+  text-shadow:0 .1cqw .8cqw #000;opacity:0;transition:opacity .25s;pointer-events:none}
+.cbox.near:hover .hidetag,.cbox.near:focus-visible .hidetag{opacity:1}
+.cbox.enter{transform:translate(-50%,-35%) scale(5);opacity:0;transition:transform .65s cubic-bezier(.5,0,.8,.4),opacity .6s}
+/* inside the box */
+#hide{background:#000;transition:background 5s}
+#hide.open{background:#2a1b0a}
+.lift{position:absolute;inset:0;transition:transform 3.6s cubic-bezier(.4,0,.3,1)}
+#hide.up .lift{transform:translateY(55%)}
+.boxgap{position:absolute;left:32%;right:32%;top:50%;height:.4%;transform:translateY(-50%);border-radius:.3cqw;
+  background:linear-gradient(180deg,#f9d27a,#f2b01b 55%,#f1bd4d);box-shadow:0 0 1.5cqw .4cqw rgba(242,176,27,.6);filter:url(#roughSm);opacity:0;
+  transition:opacity 1.4s,height 5s cubic-bezier(.4,0,.2,1),left 5s,right 5s,top 5s,box-shadow 5s}
+.boxgap.on{opacity:1}
+#hide.open .boxgap{height:68%;left:25%;right:25%;top:48%;box-shadow:0 0 9cqw 3cqw rgba(242,176,27,.55)}
+.boxgap{overflow:hidden}
+.rcat{position:absolute;left:-6%;top:-6%;width:112%;height:112%;max-width:none;object-fit:cover;object-position:50% 28%;opacity:0;filter:blur(1.3cqw);transition:opacity 2.6s}
+.rcat.in{opacity:1}
+.rglow{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,#fffdf6,#fff4dc 70%);opacity:0;transition:opacity 4s}
+.rglow.on{opacity:.85}
+.whiteout{position:absolute;inset:0;z-index:49;background:#fffaf0;opacity:0;pointer-events:none;transition:opacity 3s}
+.whiteout.on{opacity:1}
+/* the new home */
+.tv{position:absolute;left:34.27%;top:15.73%;width:30.74%;height:29.44%;overflow:hidden;opacity:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 62%,#fff6d2 0,#f6d27a 38%,#d99644 75%,#a8662a 100%)}
+.tv::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg,rgba(0,0,0,.06) 0 2px,transparent 2px 4px);pointer-events:none}
+.tv img{position:absolute;left:50%;top:5%;height:90%;width:auto;max-width:none;transform:translateX(-50%)}
+.tv.on{opacity:1;animation:tvon .5s ease-out}
+@keyframes tvon{0%{transform:scaleY(.02);filter:brightness(4)}45%{transform:scaleY(.02);filter:brightness(4)}100%{transform:none;filter:none}}
+.endpop{position:absolute;inset:0;z-index:45;display:grid;place-items:center;pointer-events:none;background:rgba(20,14,6,0);transition:background .8s}
+.endpop p{margin:0;font-weight:700;font-size:5cqw;color:#fff;letter-spacing:.01em;text-shadow:0 .2cqw 1.6cqw rgba(120,80,20,.55);opacity:0;transform:scale(.6)}
+.again2{pointer-events:auto;font:inherit;font-weight:600;font-size:1.1cqw;padding:.7cqw 1.6cqw;border-radius:2cqw;border:0;background:rgba(255,255,255,.85);color:#111;cursor:pointer}
+.endpop.on{background:rgba(20,14,6,.28)}
+.endpop.on p{animation:endpop .55s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes endpop{to{opacity:1;transform:none}}
+.fade p.thanks{text-transform:none;letter-spacing:.02em;font-size:2.6cqw;font-weight:600}
+.plate{position:absolute;left:50%;top:calc(100% + 1.7cqw);transform:translateX(-50%);padding:.25cqw .9cqw;font-weight:600;font-size:.95cqw;letter-spacing:.12em;
+  color:#2a1d10;background:url(img/grain.png),#b89a62;background-size:5cqw,auto;background-blend-mode:soft-light,normal;border-radius:2px;filter:url(#roughSm);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sunny{position:absolute;inset:0;overflow:hidden;display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .8s;z-index:20;cursor:pointer;background:#cfe6ef}
+.sunny.on{opacity:1;pointer-events:auto}
+.glow{position:absolute;inset:-25%;filter:blur(6cqw);animation:breathe 14s ease-in-out infinite alternate;
+  background:
+    radial-gradient(circle at 74% 26%,#ffe7a8 0 14%,transparent 34%),
+    radial-gradient(circle at 30% 30%,#9fd2f2 0 18%,transparent 40%),
+    radial-gradient(ellipse 22% 12% at 46% 16%,#ffffff 0 45%,transparent 100%),
+    radial-gradient(ellipse 16% 9% at 16% 24%,#ffffff 0 45%,transparent 100%),
+    radial-gradient(ellipse 18% 10% at 66% 44%,rgba(255,255,255,.85) 0 40%,transparent 100%),
+    radial-gradient(circle at 26% 78%,#b9dca0 0 16%,transparent 36%),
+    radial-gradient(circle at 78% 82%,#cfe5a8 0 14%,transparent 34%),
+    radial-gradient(circle at 55% 60%,#fff1cc 0 16%,transparent 40%),
+    linear-gradient(180deg,#bfe2f5,#fbeec8 60%,#d6e8b4)}
+@keyframes breathe{to{transform:translate(2%,-1.5%) scale(1.04)}}
+.sunny p{position:relative;margin:0;font-weight:600;font-size:3.2cqw;color:#fff;letter-spacing:.01em;text-shadow:0 .1cqw 1.2cqw rgba(170,120,40,.4)}
+.sunny small{position:absolute;bottom:4cqw;left:0;right:0;text-align:center;font-size:1cqw;color:rgba(96,74,36,.6);letter-spacing:.06em}
+
+/* dialogue */
+.talk{position:absolute;inset:0;z-index:30;pointer-events:none}
+.talk.on{pointer-events:auto;cursor:pointer}
+.bar{position:absolute;left:0;right:0;height:6.5%;background:#000;transition:transform .45s}
+.bar.t{top:0;transform:translateY(-100%)} .bar.b{bottom:0;transform:translateY(100%)}
+.talk.on .bar{transform:none}
+.who{position:absolute;bottom:0;height:74%;width:auto;max-width:none;opacity:0;transition:opacity .35s,filter .35s,transform .35s;transform:translateY(3%)}
+.who.l{left:6%} .who.r{right:6%}
+.who.small{height:67%}
+.who.show{opacity:1;transform:none}
+.who.dim{filter:brightness(.78) saturate(.8)}
+.stage.talking .arrow{opacity:0;pointer-events:none}
+.who.front{z-index:3} .who.back{z-index:1}
+.box{position:absolute;left:5%;right:5%;top:62%;bottom:10%;z-index:2;background:var(--box);border:.42cqw solid var(--box-edge);border-radius:2.6cqw;
+  padding:2.2cqw 21% 2cqw 21%;opacity:0;transform:translateY(4%);transition:opacity .35s,transform .35s;display:flex;flex-direction:column;gap:.7cqw}
+.talk.on .box{opacity:1;transform:none}
+.name{font-weight:700;font-size:1.45cqw;letter-spacing:.01em}
+.line{font-weight:500;font-size:2.1cqw;line-height:1.35;color:var(--ink);margin:0;min-height:2.8cqw}
+.choice{position:absolute;left:50%;top:34%;transform:translateX(-50%);z-index:4;max-width:56%;background:var(--box);border:.42cqw solid var(--box-edge);border-radius:2cqw;
+  padding:1.4cqw 2.4cqw;font:inherit;font-weight:500;font-size:1.9cqw;line-height:1.35;color:var(--ink);cursor:pointer;text-align:center;
+  box-shadow:0 .4cqw 1.6cqw rgba(0,0,0,.18);animation:rise .35s ease-out;transition:transform .15s,background .15s}
+.choice:hover,.choice:focus-visible{background:#f2f8fc;transform:translateX(-50%) translateY(-.3cqw);outline:none}
+@keyframes rise{from{opacity:0;transform:translate(-50%,1cqw)}to{opacity:1;transform:translateX(-50%)}}
+.talk.choosing .next{display:none}
+.next{position:absolute;right:2cqw;bottom:1.4cqw;font-size:1.3cqw;color:#6aaed6;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* food choice */
+.menu{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;gap:3cqw;background:rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .4s}
+.menu.on{opacity:1;pointer-events:auto}
+.menu h2{position:absolute;top:16%;left:0;right:0;margin:0;text-align:center;color:#fff;font-weight:600;font-size:2cqw;text-shadow:0 .15cqw .6cqw rgba(0,0,0,.4)}
+.opt{width:14cqw;aspect-ratio:1;background:var(--box);border:.42cqw solid var(--box-edge);border-radius:1.8cqw;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8cqw;font:inherit;font-weight:600;font-size:1.3cqw;color:var(--ink);
+  transition:transform .15s,background .15s}
+.opt img{height:55%;width:auto;max-width:80%;object-fit:contain}
+.opt:hover,.opt:focus-visible{transform:translateY(-.4cqw);background:#f2f8fc;outline:none}
+
+.food{position:absolute;width:auto;max-width:none;cursor:pointer;transition:transform .2s;filter:drop-shadow(0 .3cqw .4cqw rgba(0,0,0,.25));animation:slide .7s ease-out}
+.food:hover{transform:translateY(-.4cqw) rotate(-3deg)}
+@keyframes slide{from{transform:translateX(4cqw);opacity:0}to{transform:none;opacity:1}}
+
+.fade{position:absolute;inset:0;z-index:50;background:#000;opacity:1;transition:opacity .9s;display:grid;place-items:center;pointer-events:none}
+.fade.out{opacity:0}
+.fade p{margin:0;color:#fff;font-weight:500;font-size:1.6cqw;letter-spacing:.3em;text-transform:uppercase;opacity:0;transition:opacity .6s}
+.fade p.on{opacity:1}
+.fade button{pointer-events:auto;margin-top:2cqw;font:inherit;font-weight:600;font-size:1.2cqw;padding:.8cqw 1.8cqw;border-radius:2cqw;border:0;background:#fff;color:#111;cursor:pointer}
+.fade .stack{display:grid;justify-items:center;gap:1cqw}
+
+.fs{position:absolute;top:1.2cqw;right:1.2cqw;z-index:60;width:2.6cqw;height:2.6cqw;border-radius:.6cqw;border:0;background:rgba(0,0,0,.25);color:#fff;cursor:pointer;opacity:.55;display:grid;place-items:center}
+.fs:hover{opacity:1}
+.fs.snd{right:4.4cqw}
+.fs svg{width:55%;height:55%}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="stage" id="stage">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="rough" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="7"/></filter>
+    <filter id="roughSm" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="2" seed="9"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>
+  </svg>
+
+  <!-- Scene 1 / angle 1: the siblings -->
+  <section class="scene" id="roomA">
+    <img class="bg" id="roomAbg" src="img/room-a.jpg" alt="The living room. Three siblings sit by the sofa and the window.">
+    <div class="hot" id="hWindow" style="left:3%;top:0;width:40%;height:37%" role="button" tabindex="0" aria-label="Window"></div>
+    <div class="hot sib" id="hSibO" style="left:29%;top:13%;width:12.5%;height:59%" role="button" tabindex="0" aria-label="Meow~meow"></div>
+    <div class="hot sib" id="hSibP" style="left:49%;top:52%;width:28%;height:44%" role="button" tabindex="0" aria-label="Meow-meow-meow"></div>
+    <div class="hot sib" id="hSibB" style="left:62.5%;top:30%;width:18%;height:33%" role="button" tabindex="0" aria-label="Meow"></div>
+    <div class="cal" id="cal" hidden></div><img class="calimg" id="calImg" alt="" hidden>
+    <button class="arrow r" id="toRight" hidden aria-label="Go right"><svg viewBox="0 0 10 10"><path d="M2 0.5L9 5 2 9.5z" fill="#111"/></svg></button>
+  </section>
+
+  <!-- Scene 1 / angle 2: the boxes -->
+  <section class="scene" id="roomB">
+    <img class="bg" id="roomBbg" src="img/room-b-boxes.jpg" alt="The other side of the room. Two cardboard boxes stand by the wardrobe.">
+    <div class="hot" id="hBoxes" style="left:79%;top:8%;width:21%;height:57%" role="button" tabindex="0" aria-label="Boxes"></div>
+    <div class="hot" id="hBags" style="left:79%;top:41%;width:20.5%;height:34%" role="button" tabindex="0" aria-label="Bags" hidden></div>
+    <button class="arrow r" id="toDoor" hidden aria-label="Go to the door"><svg viewBox="0 0 10 10"><path d="M2 0.5L9 5 2 9.5z" fill="#111"/></svg></button>
+    <button class="arrow l" id="toLeft" aria-label="Go left"><svg viewBox="0 0 10 10"><path d="M8 0.5L1 5 8 9.5z" fill="#111"/></svg></button>
+  </section>
+
+  <!-- The door -->
+  <section class="scene" id="door">
+    <img class="bg swap" id="doorClosed" src="img/door-closed.jpg" alt="A red door.">
+    <img class="bg swap" id="doorOpen" src="img/door-open.jpg" alt="" style="opacity:0">
+    <img class="bg swap" id="doorPaw" src="img/door-paw.jpg" alt="" style="opacity:0">
+    <div class="hot" id="hDoor" style="left:38%;top:5%;width:24%;height:80%;border-radius:6%" role="button" tabindex="0" aria-label="Knock on the door"></div>
+    <div class="hint" id="knockHint" style="top:42%">Knock three times!</div>
+    <button class="arrow l" id="doorBack" hidden aria-label="Go back"><svg viewBox="0 0 10 10"><path d="M8 0.5L1 5 8 9.5z" fill="#111"/></svg></button>
+  </section>
+
+  <!-- Leaving the house -->
+  <section class="scene" id="leave">
+    <img class="bg" src="img/leave.jpg" alt="The door is open. Meow and Meow-meow-meow stand by it with two bags.">
+    <div class="hot" id="hLeaveB" style="left:23%;top:39%;width:16%;height:52%" role="button" tabindex="0" aria-label="Meow"></div>
+    <div class="hot" id="hLeaveP" style="left:78%;top:47%;width:14.5%;height:46%" role="button" tabindex="0" aria-label="Meow-meow-meow"></div>
+  </section>
+
+  <!-- The street: a tall picture the camera travels up -->
+  <section class="scene" id="street">
+    <img class="pan" id="streetImg" src="img/street.jpg" alt="A narrow street of tall yellow houses with pointed roofs.">
+    <div class="streetTap" id="streetTap" role="button" tabindex="0" aria-label="Walk"></div>
+  </section>
+
+  <!-- The show hall, in the dark -->
+  <section class="scene" id="hall">
+    <div class="lit" id="lit">
+      <div class="world" id="world">
+        <img class="sil" id="silFlat" src="img/sil-flat.png" alt="" style="left:13%;bottom:0;height:80%">
+        <img class="sil" id="silShort" src="img/sil-short.png" alt="" style="left:39.5%;top:36%;height:42%">
+        <img class="sil" id="silFold" src="img/sil-fold.png" alt="" style="left:52%;top:58%;height:19%">
+        <img class="sil" id="silBald" src="img/sil-bald.png" alt="" style="left:77%;bottom:0;height:80%">
+      </div>
+      <svg class="bars" viewBox="0 0 1920 1080" preserveAspectRatio="none" aria-hidden="true">
+        <g stroke="#fff" stroke-opacity=".32" stroke-width="3" stroke-linecap="round" fill="none">
+          <path d="M40 868 Q960 858 1880 870"/>
+          <path d="M96 1080V872"/><path d="M262 1080V871"/><path d="M430 1080V869"/><path d="M598 1080V868"/><path d="M766 1080V867"/>
+          <path d="M934 1080V866"/><path d="M1102 1080V866"/><path d="M1270 1080V867"/><path d="M1438 1080V868"/><path d="M1606 1080V869"/><path d="M1774 1080V870"/>
+        </g>
+      </svg>
+    </div>
+    <div class="peek l" id="peekL" aria-hidden="true"></div>
+    <div class="peek r" id="peekR" aria-hidden="true"></div>
+  </section>
+  <div class="sub" id="sub" aria-live="polite"></div>
+
+  <!-- Turning around: the stage, far away -->
+  <section class="scene" id="fallen">
+    <div class="fzoom" id="fzoom"><img class="bg" src="img/fallen-wide.jpg" alt="Far away, under a single light, someone lies still on a round stage."><div class="aud aud2" id="aud2" aria-hidden="true"></div></div>
+    <img class="bg" id="fallenClose" src="img/fallen-close.jpg" alt="Close up: a blue dress, white socks, and the number tag from home on the floor." style="opacity:0;transition:opacity .8s">
+    <div class="hot" id="hStage" style="left:53.5%;top:17%;width:23.5%;height:19%;border-radius:50%" role="button" tabindex="0" aria-label="Look at the stage"></div>
+    <button class="runbtn" id="runBtn" hidden>RUN</button>
+  </section>
+
+  <!-- Running away, then a box -->
+  <section class="scene" id="run">
+    <div class="runview" id="runview">
+      <div class="hall3d"><div class="wall3d" id="wall3d"></div></div>
+      <div class="vig"></div>
+      <div class="cbox" id="hideBox" role="button" tabindex="0" aria-label="Hide in the box" hidden><img src="img/box.png" alt=""><span class="hidetag">HIDE</span></div>
+    </div>
+  </section>
+
+  <!-- Inside the box -->
+  <section class="scene" id="hide">
+    <div class="lift">
+      <div class="boxgap" id="slit"><img class="rcat" id="rcat" src="img/rescue-cat.jpg" alt="A blurry orange cat looks down into the box."><div class="rglow" id="rglow"></div></div>
+    </div>
+  </section>
+
+  <!-- The new home -->
+  <section class="scene" id="home">
+    <img class="bg" src="img/home.jpg" alt="A bright living room with a TV, a round coffee table and a big window.">
+    <div class="tv" id="tv"><img src="img/meowmeowmeow.png" alt="Meow-meow-meow on TV"></div>
+    <div class="hot" id="hHomeWin" style="left:86%;top:0;width:14%;height:48%" role="button" tabindex="0" aria-label="Window"></div>
+    <div class="hot" id="hTable" style="left:32%;top:68%;width:34%;height:24%;border-radius:50%" role="button" tabindex="0" aria-label="Coffee table"></div>
+  </section>
+
+  <!-- The door of the dark room opens -->
+  <section class="scene" id="doorlight">
+    <img class="square" id="dlDoor" src="img/hall-door.jpg" alt="A door opens onto warm light.">
+    <img class="square" id="dlCat" src="img/hall-cat.jpg" alt="A black cat peers around the door." style="opacity:0">
+    <div class="hot gap" id="hGap" style="left:53.5%;top:19%;width:6.5%;height:50%;border-radius:30%" role="button" tabindex="0" aria-label="Slip out through the door" hidden></div>
+  </section>
+
+  <!-- On the judging table -->
+  <section class="scene" id="judge">
+    <div class="aud" id="aud" aria-hidden="true"></div>
+    <div class="pool" aria-hidden="true"></div>
+    <div class="tedge" aria-hidden="true"></div>
+    <div class="jhud"><span>Ring 3 · Short-nosed Longhair · No. 07</span><span>Score <b id="jscore">0</b><span class="jdelta" id="jdelta"></span></span></div>
+    <div class="jnarr">
+      <p class="jline" id="jline" aria-live="polite"></p>
+      <div class="jreact" id="jreact" aria-live="polite"></div>
+      <div class="jtimer" id="jtimer" aria-hidden="true"><i id="jbar"></i></div>
+    </div>
+    <div class="jslip" id="jslip" role="status"><small id="jslipHead">Judge’s sheet</small><p id="jclause"></p><div class="jpts" id="jpts"></div><div class="jnote" id="jnote"></div></div>
+    <div class="jchoices" id="jchoices"></div>
+  </section>
+
+  <!-- Back in the dark -->
+  <section class="scene" id="jcage">
+    <p class="cline" id="cline1">You are back in the dark.</p>
+  </section>
+
+  <!-- The corridor of the human show's history (placeholder until the drawings arrive) -->
+  <section class="scene" id="corridor">
+    <img class="bg" src="img/corridor-bg.jpg" alt="A dark corridor with five lit picture frames.">
+    <div class="pic" id="fr0" style="left:8.18%;top:12.31%" role="button" tabindex="0" aria-label="Look closer"><img src="img/wall-1871.png" alt=""><span class="plate">1871</span></div>
+    <div class="pic" id="fr1" style="left:44.9%;top:12.31%" role="button" tabindex="0" aria-label="Look closer"><img src="img/wall-1889.png" alt=""><span class="plate">1889</span></div>
+    <div class="pic" id="fr2" style="left:80.05%;top:12.31%" role="button" tabindex="0" aria-label="Look closer"><img src="img/wall-1906.png" alt=""><span class="plate">1906</span></div>
+    <div class="pic" id="fr3" style="left:24.38%;top:44.44%" role="button" tabindex="0" aria-label="Look closer"><img src="img/wall-1961.png" alt=""><span class="plate">1961</span></div>
+    <div class="pic" id="fr4" style="left:62.19%;top:44.35%" role="button" tabindex="0" aria-label="Look closer"><img src="img/wall-2026.png" alt=""><span class="plate">2026</span></div>
+    <button class="turn" id="turn" hidden aria-label="Turn around"><svg viewBox="0 0 10 10"><path d="M1 2.5L5 7.5 9 2.5z" fill="#fff"/></svg></button>
+    <div class="zoom" id="zoom" role="button" tabindex="-1" aria-label="Put it back">
+      <figure class="frame big"><div class="wood"></div><div class="mat"><img id="zoomImg" src="" alt=""></div><figcaption class="plate" id="zoomYear"></figcaption></figure>
+    </div>
+  </section>
+
+
+  <div class="sunny" id="sunny" role="button" tabindex="-1"><div class="glow"></div><p>Sun is shining.</p><small>CLICK ANYWHERE</small></div>
+
+  <div class="menu" id="menu">
+    <button class="opt" data-food="rice" aria-label="Rice"><img src="img/rice.png" alt=""></button>
+    <button class="opt" data-food="apple" aria-label="Apple"><img src="img/apple.png" alt=""></button>
+    <button class="opt" data-food="milk" aria-label="Milk"><img src="img/milk.png" alt=""></button>
+  </div>
+
+  <div class="talk" id="talk" aria-live="polite">
+    <div class="bar t"></div><div class="bar b"></div>
+    <img class="who l" id="whoL" alt="">
+    <img class="who r" id="whoR" alt="">
+    <button class="choice" id="choice" hidden></button>
+    <div class="box"><div class="name" id="name"></div><p class="line" id="line"></p><span class="next" aria-hidden="true">▼</span></div>
+  </div>
+
+  <div class="endpop" id="endPop"><div class="stack" style="display:grid;justify-items:center;gap:1.4cqw"><p>Thanks for playing!</p><button class="again2" id="again2" hidden>Play again</button></div></div>
+  <div class="whiteout" id="whiteout"></div>
+  <div class="fade" id="fade"><div class="stack"><p class="thanks" id="thanks">Thanks for playing!</p><button id="again" hidden>Play again</button></div></div>
+
+  <button class="fs snd" id="snd" aria-label="Mute sound"><svg viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 4h1.6L5.5 2v6L3.1 6H1.5z" fill="#fff"/><path id="sndWaves" d="M7 3.6c.6.8.6 2 0 2.8M8.2 2.6c1.1 1.4 1.1 3.4 0 4.8"/><path id="sndOff" d="M7 3.5l2.2 3M9.2 3.5L7 6.5" style="display:none"/></svg></button>
+  <button class="fs" id="fs" aria-label="Full screen"><svg viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="1.2"><path d="M1 3.5V1h2.5M6.5 1H9v2.5M9 6.5V9H6.5M3.5 9H1V6.5"/></svg></button>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const CAST = {
+  meow: {name:'Meow', color:'var(--meow)', img:'img/meow.png'},
+  mmm:  {name:'Meow-meow-meow', color:'var(--mmm)', img:'img/meowmeowmeow.png'},
+  mdm:  {name:'Meow~meow', color:'var(--mdm)', img:'img/meow-dash-meow.png'},
+  me:   {name:'Meow-meow (you)', color:'var(--mm)', img:'img/meowmeow.png'},
+  tv:   {name:'Human Show News', color:'#d9822c', img:'img/meowmeowmeow.png'}
+};
+['img/home.jpg','img/corridor-bg.jpg','img/fallen-wide.jpg','img/fallen-close.jpg','img/wall-1871.png','img/wall-1889.png','img/wall-1906.png','img/wall-1961.png','img/wall-2026.png','img/grain.png','img/hall-door.jpg','img/hall-cat.jpg','img/sil-flat.png','img/sil-short.png','img/sil-fold.png','img/sil-bald.png','img/leave.jpg','img/street.jpg','img/date-29.png','img/room-a.jpg','img/room-a2.jpg','img/room-b-bags.jpg','img/date-27.png','img/date-28.png','img/room-b-boxes.jpg','img/door-closed.jpg','img/door-open.jpg','img/door-paw.jpg',
+ ...Object.values(CAST).map(c=>c.img),'img/rice.png','img/apple.png','img/milk.png'].forEach(s=>{const i=new Image();i.src=s;});
+
+let day = 1, busy = false, windowSeen = false, talkedSibs = false;
+const LAST_DAY = 4;
+function refresh(){
+  $('roomAbg').src = day >= 3 ? 'img/room-a2.jpg' : 'img/room-a.jpg';
+  $('roomBbg').src = day >= 3 ? 'img/room-b-bags.jpg' : 'img/room-b-boxes.jpg';
+  const sibsOn = day === 1 ? windowSeen : true;
+  document.querySelectorAll('.sib').forEach(h => h.hidden = !sibsOn);
+  if (day >= 3) $('hSibO').hidden = true;
+  $('toRight').hidden = day === 1 ? !talkedSibs : false;
+  $('toDoor').hidden = day < 2;
+  $('doorBack').hidden = day < 2;
+  $('hBoxes').hidden = day !== 2;
+  $('hBags').hidden = day !== 3;
+  const d = DATES[day];
+  $('cal').hidden = $('calImg').hidden = !d;
+  if (d){ const c = $('calImg'); c.src = d.src; c.style.left = d.x+'%'; c.style.top = d.y+'%'; c.style.width = d.w+'%'; }
+}
+const DATES = {
+  2:{src:'img/date-27.png', x:82.812, y:14.259, w:4.062},
+  3:{src:'img/date-28.png', x:82.865, y:14.259, w:3.646},
+  4:{src:'img/date-29.png', x:82.812, y:14.074, w:3.958}
+};
+function show(id){ ['roomA','roomB','door','leave','street','hall','doorlight','judge','jcage','corridor','fallen','run','hide','home'].forEach(s => $(s).classList.toggle('on', s===id)); }
+function onTap(el, fn){
+  el.addEventListener('click', e => { e.stopPropagation(); if(!busy) fn(); });
+  el.addEventListener('keydown', e => { if((e.key==='Enter'||e.key===' ') && !busy){ e.preventDefault(); fn(); } });
+}
+
+/* ---- dialogue ---- */
+function talk(lines, choice){
+  return new Promise(done => {
+    busy = true;
+    const t = $('talk'), L = $('whoL'), R = $('whoR');
+    let i = 0;
+    L.className='who l'; R.className='who r';
+    t.classList.add('on'); $('stage').classList.add('talking');
+    const step = () => {
+      if (i >= lines.length && choice && !$('choice').dataset.shown){
+        const c = $('choice'); c.textContent = choice; c.hidden = false; c.dataset.shown = '1'; t.classList.add('choosing');
+        t.removeEventListener('click', step); document.removeEventListener('keydown', key);
+        const pick = e => { e.stopPropagation(); c.removeEventListener('click', pick); c.hidden = true; delete c.dataset.shown; t.classList.remove('choosing'); i = lines.length; finish(); };
+        c.addEventListener('click', pick); c.focus();
+        return;
+      }
+      if (i >= lines.length){ finish(); return; }
+      function finish(){
+        t.classList.remove('on'); $('stage').classList.remove('talking'); L.className='who l'; R.className='who r';
+        t.removeEventListener('click', step); document.removeEventListener('keydown', key);
+        setTimeout(()=>{ busy=false; done(); }, 350);
+      }
+      const [who, text] = lines[i], c = CAST[who];
+      const me = i % 2 === 0 ? L : R, other = me === L ? R : L;
+      me.src = c.img; me.alt = c.name;
+      me.className = me.className.split(' ').slice(0,2).join(' ') + ' show front' + (who==='mmm' ? ' small' : '');
+      if (other.src && other.classList.contains('show')) other.className = other.className.split(' ').slice(0,2).join(' ') + ' show dim back' + (other.classList.contains('small') ? ' small' : '');
+      $('name').textContent = c.name; $('name').style.color = c.color;
+      $('line').textContent = text;
+      i++;
+    };
+    const key = e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); step(); } };
+    setTimeout(()=>{ step(); t.addEventListener('click', step); document.addEventListener('keydown', key); }, 250);
+  });
+}
+
+/* ---- window ---- */
+onTap($('hWindow'), () => { busy = true; $('sunny').classList.add('on'); Sound.birds(true); setTimeout(()=>busy=false, 400); });
+$('sunny').addEventListener('click', () => { $('sunny').classList.remove('on'); Sound.birds(false); windowSeen = true; refresh(); });
+
+/* ---- siblings: replayable ---- */
+['hSibO','hSibP','hSibB'].forEach(id => onTap($(id), async () => {
+  if (day >= 4){
+    await talk([
+      ['meow','What a nice day.'],
+      ['mmm','All this sunbathing is making me hungry.']
+    ], 'Let’s go knock on the door!');
+  } else if (day < 3){
+    await talk([
+      ['meow','What a nice day.'],
+      ['mmm','All this sunbathing is making me hungry.'],
+      ['mdm','Let’s go knock on the door!']
+    ]);
+  } else {
+    await talk([
+      ['meow','What a nice day. Without Meow~meow blocking the window, the sun feels even warmer.'],
+      ['mmm','But I kind of miss Meow~meow. Our owner didn’t let me go to the new home with him.']
+    ], 'Then let’s go knock on the door. An apple will cheer you up.');
+  }
+  const first = !talkedSibs; talkedSibs = true; refresh();
+  if (first && day === 1) $('toRight').focus();
+}));
+
+/* ---- arrows ---- */
+onTap($('toRight'), () => { if (day === 1) goDoor(); else show('roomB'); });
+onTap($('toLeft'), () => show('roomA'));
+onTap($('toDoor'), () => goDoor());
+onTap($('doorBack'), () => { $('menu').classList.remove('on'); show(day === 1 ? 'roomA' : 'roomB'); });
+
+/* ---- boxes (round 2) and bags (round 3): replayable ---- */
+onTap($('hBoxes'), () => talk([
+  ['me','What’s this?'],
+  ['meow','Meow~meow is going to a new home!'],
+  ['mdm','Yes! I’ll miss you all!'],
+  ['mmm','Can Meow-meow-meow go play too?']
+]));
+onTap($('hBags'), () => talk([
+  ['me','What’s this? Are we going to a new home too?'],
+  ['meow','I think we get to go perform tomorrow.']
+]));
+
+/* ---- door ---- */
+let knocks = 0;
+function goDoor(){
+  knocks = 0;
+  $('doorClosed').style.opacity = 1; $('doorOpen').style.opacity = 0; $('doorPaw').style.opacity = 0;
+  $('knockHint').style.opacity = talkedSibs ? 1 : 0; $('hDoor').hidden = !talkedSibs;
+  document.querySelectorAll('.food').forEach(f=>f.remove());
+  show('door');
+}
+onTap($('hDoor'), async () => {
+  knocks++; Sound.knock();
+  const st = $('door'); st.classList.remove('shake'); void st.offsetWidth; st.classList.add('shake');
+  const k = document.createElement('div'); k.className='knock'; k.textContent='knock';
+  k.style.left = (44 + knocks*3) + '%'; k.style.top = (30 + knocks*6) + '%';
+  st.appendChild(k); setTimeout(()=>k.remove(), 800);
+  if (knocks < 3) return;
+  busy = true; $('hDoor').hidden = true; $('knockHint').style.opacity = 0; $('doorBack').hidden = true;
+  Sound.duck(.25, 1);
+  await wait(800);
+  Sound.door(); $('doorOpen').style.opacity = 1; $('doorClosed').style.opacity = 0;
+  await wait(700);
+  $('menu').classList.add('on'); Sound.meow(); busy = false;
+  document.querySelector('.opt').focus();
+});
+document.querySelectorAll('.opt').forEach(b => b.addEventListener('click', async () => {
+  if (menuMode === 'home') return homeNews(b);
+  $('menu').classList.remove('on'); busy = true; Sound.duck(1, 2.5);
+  await wait(500);
+  $('doorPaw').style.opacity = 1; $('doorOpen').style.opacity = 0;
+  await wait(600);
+  const f = document.createElement('img');
+  f.className='food'; f.src = 'img/' + b.dataset.food + '.png'; f.alt = b.getAttribute('aria-label');
+  f.style.height = b.dataset.food==='apple' ? '11%' : '15%';
+  f.style.left = '54%'; f.style.bottom = '9%';
+  f.tabIndex = 0; f.setAttribute('role','button');
+  $('door').appendChild(f);
+  busy = false;
+  const eat = () => { if (busy) return; busy = true; f.style.transform='scale(.4)'; f.style.opacity='0'; f.style.transition='all .5s'; setTimeout(day >= LAST_DAY ? toLeave : nextDay, 600); };
+  f.addEventListener('click', eat);
+  f.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') eat(); });
+}));
+
+/* ---- round transitions: no labels, only the calendar moves ---- */
+async function fadeThrough(setup){
+  const fd = $('fade');
+  fd.classList.remove('out'); Sound.duck(.35, 1.2); await wait(1000);
+  setup(); await wait(700);
+  fd.classList.add('out'); Sound.duck(1, 1.5); await wait(900);
+}
+/* ---- leaving: last talk, music fades out, the street ---- */
+async function toLeave(){
+  await fadeThrough(() => show('leave'));
+  busy = false;
+}
+['hLeaveB','hLeaveP'].forEach(id => onTap($(id), async () => {
+  Sound.duck(0, 4);
+  await talk([
+    ['meow','Meow-meow, are you ready? We’re heading out!'],
+    ['mmm','So now it’s just Meow-meow-meow at home! How boring…'],
+    ['meow','It’s okay, Meow-meow-meow. Eat well at home, and next time you can go perform too.']
+  ]);
+  busy = true;
+  const fd = $('fade');
+  fd.classList.remove('out'); Sound.door(); await wait(1600);
+  show('street'); const img = $('streetImg');
+  img.style.transition = 'none'; img.style.transform = 'translateY(-61.3%)';
+  $('streetTap').className = 'streetTap'; streetStage = 'start';
+  await wait(600);
+  fd.classList.add('out'); await wait(900);
+  busy = false; $('streetTap').focus();
+}));
+let streetStage = 'start';
+onTap($('streetTap'), async () => {
+  const img = $('streetImg'), tap = $('streetTap');
+  if (streetStage === 'start'){
+    streetStage = 'walking'; busy = true;
+    let foot = 0; const steps = setInterval(() => Sound.footstep(foot++ % 2 ? .25 : -.25), 460);
+    img.style.transition = 'transform 5.5s ease-in-out'; img.style.transform = 'translateY(0)';
+    await wait(5700);
+    img.style.transition = 'transform 2.8s ease-in-out'; img.style.transform = 'translateY(-30.6%)';
+    await wait(2900);
+    clearInterval(steps);
+    streetStage = 'middle'; tap.className = 'streetTap center'; busy = false;
+  } else if (streetStage === 'middle'){
+    streetStage = 'done';
+    toHall();
+  }
+});
+
+/* ---- into the show hall: sound first, then a little light ---- */
+function bareLine(who, text){
+  return new Promise(done => {
+    busy = true;
+    const t = $('talk'), c = CAST[who];
+    t.classList.add('on', 'bare'); t.classList.remove('nobox'); $('stage').classList.add('talking');
+    $('name').textContent = c.name; $('name').style.color = c.color; $('line').textContent = text;
+    const fin = () => { t.removeEventListener('click', fin); document.removeEventListener('keydown', key); t.classList.remove('on'); $('stage').classList.remove('talking'); setTimeout(done, 450); };
+    const key = e => { if (e.key===' '||e.key==='Enter'){ e.preventDefault(); fin(); } };
+    setTimeout(() => { t.addEventListener('click', fin); document.addEventListener('keydown', key); }, 400);
+  });
+}
+function bareChoice(text){
+  return new Promise(done => {
+    const t = $('talk'), c = $('choice');
+    t.classList.add('on', 'bare', 'nobox'); c.textContent = text; c.hidden = false; c.focus();
+    const pick = e => { e.stopPropagation(); c.removeEventListener('click', pick); c.hidden = true; t.classList.remove('on', 'nobox'); setTimeout(done, 450); };
+    c.addEventListener('click', pick);
+  });
+}
+async function subtitle(text, ms){ const s = $('sub'); s.textContent = text; s.classList.add('on'); await wait(ms); s.classList.remove('on'); await wait(800); }
+function walk(ms, echo){
+  let n = 0; const id = setInterval(() => Sound.footstep(n++ % 2 ? .25 : -.25, typeof echo === 'function' ? echo(n) : echo), 520);
+  return wait(ms).then(() => clearInterval(id));
+}
+async function toHall(){
+  busy = true;
+  const fd = $('fade');
+  fd.style.transition = 'opacity 3s';
+  fd.classList.remove('out');
+  await walk(4200, n => Math.min(1, n * .13));          // steps keep going, the echo grows
+  fd.style.transition = '';
+  show('hall'); $('hall').classList.remove('explore'); $('hall').style.setProperty('--r', '0px');
+  fd.classList.add('out');                                // the hall itself is pitch black
+  Sound.meow({pitch:1.7, gain:.04, dur:.45}); await wait(1100);
+  Sound.slam(); await wait(1800);
+  Sound.hall(1);
+  await bareLine('meow', 'Meow-meow, it’s so dark.');
+  await wait(3600);                                       // just listen
+  await bareLine('meow', 'Stay close.');
+  Sound.hall(.45);
+  await walk(4800, .9);
+  Sound.hall(0, true); await wait(1000);                 // inside the room: everything goes quiet
+  Sound.meow({gain:.12, dur:.6}); Sound.meow({gain:.1, dur:.5, pitch:.95, delay:.75});
+  const s = $('sub'); s.textContent = 'Meow meow meow meow meow.'; s.classList.add('on');
+  await wait(1900); Sound.lock(); setTimeout(() => { Sound.breathLevel(.35); Sound.breath(true); }, 400);
+  await wait(900); s.classList.remove('on'); await wait(1000);
+  await bareLine('meow', 'Are you there?');
+  await bareChoice('Yes, where are we?');
+  await bareLine('meow', 'I don’t know. But I’m here with you, Meow-meow.');
+  $('talk').classList.remove('bare');
+  startLight();
+}
+/* three views: 0 = look left (flat face), 1 = straight ahead, 2 = look right (hairless) */
+let seen = new Set(), lightOn = false, hallEnding = false, cam = 1, panning = false, dwell = null;
+function setCam(n){
+  cam = n; panning = true;
+  $('world').style.transform = `translateX(${-n * 33.333}%)`;
+  $('peekL').classList.toggle('on', n > 0); $('peekR').classList.toggle('on', n < 2);
+  setTimeout(() => { panning = false; }, 1800);
+}
+function startLight(){
+  const h = $('hall');
+  seen = new Set(); lightOn = true; hallEnding = false; h.classList.add('explore');
+  $('world').style.transition = 'none'; setCam(1); void $('world').offsetWidth; $('world').style.transition = '';
+  const max = $('stage').getBoundingClientRect().width * .13; let r = 0;
+  const grow = setInterval(() => { r = Math.min(max, r + max/26); h.style.setProperty('--r', r + 'px'); if (r >= max) clearInterval(grow); }, 40);
+  busy = false;
+}
+function moveLight(e){
+  if (!lightOn) return;
+  const h = $('hall'), b = $('stage').getBoundingClientRect();
+  const x = (e.clientX - b.left) / b.width * 100, y = (e.clientY - b.top) / b.height * 100;
+  h.style.setProperty('--mx', x + '%'); h.style.setProperty('--my', y + '%');
+  // turn your head: rest the light at the left or right edge
+  const edge = x < 7 ? -1 : x > 93 ? 1 : 0;
+  if (!edge || panning){ clearTimeout(dwell); dwell = null; }
+  else if (!dwell){
+    dwell = setTimeout(() => { dwell = null; const n = cam + edge; if (n >= 0 && n <= 2 && !panning) setCam(n); }, 350);
+  }
+  // anything the light lands on counts as seen
+  ['silFlat','silShort','silFold','silBald'].forEach(id => {
+    const r = $(id).getBoundingClientRect();
+    if (e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom && !seen.has(id)){ seen.add(id); Sound.breathLevel(.35 + .65 * seen.size / 4); Sound.gasp(); }
+  });
+  if (seen.size === 4 && !hallEnding){ hallEnding = true; setTimeout(endHall, 5000); }
+}
+$('stage').addEventListener('pointermove', moveLight);
+$('stage').addEventListener('pointerdown', moveLight);
+/* ---- the door opens, a cat looks in, then the judging table ---- */
+async function endHall(){
+  busy = true; lightOn = false;
+  Sound.door(); await wait(1250);              // let the door sound finish
+  setCam(1); Sound.breath(false);
+  $('dlDoor').style.opacity = 1; $('dlCat').style.opacity = 0;
+  $('hall').style.setProperty('--r', '0px'); $('hall').classList.remove('explore');
+  show('doorlight');
+  await wait(2000);
+  Sound.meow(); Sound.meow({delay:.6});
+  $('dlCat').style.opacity = 1;
+  await wait(2600);
+  const fd = $('fade');                       // fade without bringing the music back
+  fd.classList.remove('out'); await wait(1300);
+  show('judge'); judgeOpening(); busy = true; await wait(600);
+  fd.classList.add('out'); await wait(900); busy = false;
+}
+
+/* ---- judging: guess what the paw is checking ---- */
+const JPARTS = [['head','Head'],['nose','Nose'],['ears','Ears'],['eyes','Eyes'],['legs','Legs'],['hair','Hair']];
+const JROUNDS = [
+  {part:'head', feel:'A cold but soft paw presses against your forehead, pushing back slowly, as if tracing a curve.', clause:'Head: round and broad, forehead full.'},
+  {part:'nose', feel:'Whiskers brush the middle of your face. The judge leans in close. You hear it counting your breaths.', clause:'Nose: short and flat. The shorter, the better. Nostrils open enough to breathe.'},
+  {part:'ears', feel:'Something presses the sides of your head down, then lets go. It waits to see what springs back.', clause:'Ears: small, round-tipped, set low, tilted forward.'},
+  {part:'eyes', feel:'A paw lifts your chin and turns your face into the light. It holds you there. You try not to blink.', clause:'Eyes: large and round, set wide apart. Wrong colour in an adult: disqualify.'},
+  {part:'legs', feel:'A soft tape loops around your calf. It tightens. Click.', clause:'Legs: short and thick, heavy in bone.'},
+  {part:'hair', feel:'Claws comb through your hair the wrong way. Once. Twice.', clause:'Coat: long, thick, fine in texture.'}
+];
+const JTIME = 5000, JGAIN = 15, JLOSS = 5, FLINCH = ['You flinched.','You pulled away.','You shrank back.'];
+const VERDICTS = [
+  [6, 'Exceptional type. Short, flat nose; a sweet expression. Calm on the table. Keep for breeding.'],
+  [4, 'Good type. Mostly still under handling. Suitable for another breeder’s programme.'],
+  [2, 'Acceptable, but restless under handling. Recommend transfer.'],
+  [0, 'Below standard. Uncooperative on the table. Sell as a pet.']
+];
+let ji = 0, jscore = 0, jcorrect = 0, jbright = .5, jtimer = null, jlocked = true;
+(function buildAudience(){
+  const seed = n => { const x = Math.sin(n*9301+49297)*233280; return x - Math.floor(x); };
+  const a = $('aud');
+  for (let k = 0; k < 46; k++){
+    const row = seed(k+1), depth = .3 + row*.7, p = document.createElement('div');
+    p.className = 'pair'; p.style.left = (5 + seed(k+101)*90) + '%'; p.style.top = (6 + row*84) + '%';
+    p.style.setProperty('--s', ((5 + depth*13) / 12.8).toFixed(2) + 'cqw'); p.style.setProperty('--depth', depth.toFixed(2));
+    p.style.setProperty('--c', seed(k+303) > .5 ? '#9cff5a' : '#ffd23f');
+    p.innerHTML = '<span class="eye"></span><span class="eye"></span>'; a.appendChild(p);
+  }
+  setInterval(() => { const ps = a.children; const p = ps[Math.floor(Math.random()*ps.length)]; p.classList.add('blink'); setTimeout(() => p.classList.remove('blink'), 160); }, 650);
+})();
+(function sparseEyes(){
+  const box = $('aud2'), spots = [[6,18,1],[14,46,.8],[22,72,1.1],[31,30,.7],[9,84,1.2],[38,60,.9],[27,92,1.1],[45,82,.8],
+                                  [52,70,.7],[63,88,1],[74,66,.8],[86,74,1.1],[94,56,.9],[91,24,.7],[47,14,.6],[34,8,.6]];
+  spots.forEach(([x,y,d], i) => {
+    const p = document.createElement('div'); p.className = 'pair';
+    p.style.left = x+'%'; p.style.top = y+'%'; p.style.setProperty('--s', (.55 + d*.6).toFixed(2)+'cqw'); p.style.setProperty('--depth', (.45 + d*.45).toFixed(2));
+    p.style.setProperty('--c', i % 3 ? '#9cff5a' : '#ffd23f');
+    p.style.setProperty('--lx', x < 65 ? .75 : -.75);          // at first they watch the stage
+    p.innerHTML = '<span class="eye"></span><span class="eye"></span>'; box.appendChild(p);
+  });
+  setInterval(() => { const ps = box.children; const p = ps[Math.floor(Math.random()*ps.length)]; p.classList.add('blink'); setTimeout(() => p.classList.remove('blink'), 170); }, 800);
+})();
+function jBright(v){ jbright = Math.max(.3, Math.min(1, v)); $('aud').style.setProperty('--b', jbright); }
+function jPupils(kind){ const a = $('aud'); a.classList.remove('wide','slit'); if (kind) a.classList.add(kind); }
+function jSay(text){ const l = $('jline'); l.classList.remove('in'); setTimeout(() => { l.textContent = text; l.classList.add('in'); }, 60); }
+function jButtons(list, single){
+  const c = $('jchoices'); c.innerHTML = ''; c.classList.toggle('single', !!single);
+  list.forEach(([id, label, fn]) => { const b = document.createElement('button'); b.className = 'jbtn'; b.id = 'pick-' + id; b.textContent = label; b.addEventListener('click', e => { e.stopPropagation(); fn(); }); c.appendChild(b); });
+}
+function jEnable(on){ document.querySelectorAll('#jchoices .jbtn').forEach(b => b.disabled = !on); }
+function jDelta(n){
+  const d = $('jdelta'); d.textContent = (n > 0 ? '+' : '') + n; d.style.color = n > 0 ? '#b7f36a' : '#e8706c';
+  d.classList.add('show'); setTimeout(() => d.classList.remove('show'), 1400); $('jscore').textContent = jscore;
+}
+function judgeOpening(){
+  ji = 0; jscore = 0; jcorrect = 0; $('jscore').textContent = 0; jBright(.75); jPupils(null);
+  $('jreact').textContent = ''; $('jslip').classList.remove('show'); $('jtimer').classList.remove('on');
+  jSay('You are brought onto the judging table.');
+  jButtons([['still', 'Stand still', () => { jEnable(false); $('jreact').textContent = ''; jRound(); }]], true);
+  jEnable(false);
+  setTimeout(() => jEnable(true), 1400);
+  busy = false;
+}
+function jRound(){
+  if (ji >= JROUNDS.length) return jFinish();
+  const r = JROUNDS[ji];
+  $('jslip').classList.remove('show'); $('jreact').textContent = ''; $('jreact').className = 'jreact';
+  jSay(r.feel);
+  jButtons(JPARTS.map(([id, label]) => [id, label, () => jAnswer(id)])); jEnable(false);
+  setTimeout(() => {
+    jlocked = false; jEnable(true); $('jtimer').classList.add('on');
+    const bar = $('jbar'); bar.style.transition = 'none'; bar.style.transform = 'scaleX(1)';
+    requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.transition = `transform ${JTIME}ms linear`; bar.style.transform = 'scaleX(0)'; }));
+    clearTimeout(jtimer); jtimer = setTimeout(() => jAnswer(null), JTIME);
+  }, 1000);
+}
+function jAnswer(pick){
+  if (jlocked) return; jlocked = true; clearTimeout(jtimer); jEnable(false);
+  const bar = $('jbar'); bar.style.transform = getComputedStyle(bar).transform; bar.style.transition = 'none';
+  const r = JROUNDS[ji], react = $('jreact');
+  if (pick === r.part){
+    jcorrect++; jscore += JGAIN; jDelta(JGAIN);
+    react.textContent = 'The eyes below widen and brighten.'; react.className = 'jreact good';
+    jBright(jbright + .12); jPupils('wide'); Sound.purr();
+    $('jslipHead').textContent = 'Judge’s sheet'; $('jclause').textContent = r.clause; $('jpts').textContent = '+' + JGAIN; $('jnote').textContent = '';
+    $('jslip').classList.add('show');
+  } else {
+    jscore -= JLOSS; jDelta(-JLOSS);
+    react.textContent = pick === null ? 'You hesitated. The eyes below narrow and dim.' : FLINCH[ji % FLINCH.length] + ' The eyes below narrow and dim.';
+    react.className = 'jreact bad'; jBright(jbright - .12); jPupils('slit'); Sound.meow({pitch:.55, gain:.15, dur:1});
+  }
+  ji++;
+  setTimeout(() => { $('jtimer').classList.remove('on'); jRound(); }, 3000);
+}
+function jFinish(){
+  $('jchoices').innerHTML = ''; $('jreact').textContent = '';
+  jSay('The paw lifts away. Pens scratch somewhere below.');
+  $('jslipHead').textContent = `Final · ${jscore} pts · ${jcorrect}/${JROUNDS.length}`;
+  $('jclause').textContent = VERDICTS.find(([min]) => jcorrect >= min)[1];
+  $('jpts').textContent = '';
+  $('jnote').textContent = 'Note: narrow nostrils, audible breathing. Does not affect score.';
+  setTimeout(() => $('jslip').classList.add('show'), 900);
+  setTimeout(toCage, 6500);
+}
+async function toCage(){
+  busy = true;
+  const fd = $('fade');
+  fd.classList.remove('out'); await wait(1200);
+  $('cline1').classList.remove('in'); show('jcage');
+  fd.classList.add('out'); await wait(600);
+  $('cline1').classList.add('in'); await wait(3200);
+  $('cline1').classList.remove('in'); await wait(1300);
+  // the door again, the cat still there
+  $('dlDoor').style.opacity = 1; $('dlCat').style.opacity = 1; $('hGap').hidden = true;
+  show('doorlight'); await wait(1400);
+  Sound.meow(); await wait(900);
+  $('dlCat').style.opacity = 0;                 // the cat is gone, the door stays open
+  await wait(600);
+  $('hGap').hidden = false; busy = false;
+}
+/* corridor: click a picture to bring it to the centre, click again to put it back */
+let wallSeen = new Set();
+document.querySelectorAll('.pic').forEach((f, i) => onTap(f, () => {
+  $('zoomImg').src = f.querySelector('img').src; $('zoomYear').textContent = f.querySelector('.plate').textContent;
+  $('zoom').classList.add('on'); wallSeen.add(i);
+}));
+let screamed = false;
+function closeZoom(){
+  if (!$('zoom').classList.contains('on')) return;
+  $('zoom').classList.remove('on');
+  if (wallSeen.size === 5 && !screamed){
+    screamed = true; busy = true;
+    setTimeout(() => Sound.fall(), 700);
+    setTimeout(() => { Sound.eerie(false); Sound.scream(); }, 1350);
+    setTimeout(() => { $('turn').hidden = false; $('turn').focus(); busy = false; }, 2900);
+  }
+}
+$('zoom').addEventListener('click', e => { e.stopPropagation(); closeZoom(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeZoom(); });
+onTap($('turn'), async () => {
+  $('turn').hidden = true; busy = true;
+  const fd = $('fade'); fd.style.transition = 'opacity .5s';
+  fd.classList.remove('out'); await wait(550);
+  resetFallen(); $('hStage').hidden = false;
+  show('fallen'); await wait(150);
+  fd.classList.add('out'); await wait(600); fd.style.transition = '';
+  busy = false;
+});
+let fallenStage = 'wide';
+function resetFallen(){
+  fallenStage = 'wide';
+  $('fzoom').classList.remove('in'); $('fzoom').style.transition = ''; $('fallenClose').style.opacity = 0;
+  $('fallen').classList.remove('whip'); $('aud2').className = 'aud aud2';
+  $('runBtn').hidden = true; $('runBtn').classList.remove('on');
+}
+onTap($('hStage'), async () => {
+  busy = true; $('hStage').hidden = true;
+  $('fzoom').classList.add('in'); await wait(1100);
+  $('fallenClose').style.opacity = 1; await wait(900);
+  busy = false; fallenStage = 'close';
+});
+/* back out to the wide view: now the eyes are there, and they all turn to you */
+$('fallen').addEventListener('click', async () => {
+  if (fallenStage !== 'close' || busy) return;
+  fallenStage = 'back'; busy = true;
+  const fz = $('fzoom');
+  fz.style.transition = 'transform 1.6s cubic-bezier(.4,0,.2,1),opacity .01s';
+  fz.classList.remove('in'); $('fallenClose').style.opacity = 0;
+  await wait(1700); fz.style.transition = '';
+  Sound.breathLevel(.5); Sound.breath(true);
+  $('aud2').classList.add('on'); await wait(2200);
+  $('aud2').classList.add('stare'); Sound.hiss(); Sound.heart(true); Sound.breathLevel(1);
+  await wait(1700);
+  const r = $('runBtn'); r.hidden = false; void r.offsetWidth; r.classList.add('on'); r.focus();
+  busy = false;
+});
+/* RUN: whip round and flee */
+onTap($('runBtn'), async () => {
+  busy = true; $('runBtn').classList.remove('on');
+  Sound.whoosh(); $('fallen').classList.add('whip');
+  await wait(480);
+  const rv = $('runview'), bx = $('hideBox');
+  rv.className = 'runview'; bx.hidden = true; bx.className = 'cbox';
+  show('run'); void rv.offsetWidth; rv.classList.add('going');
+  Sound.heart(false); Sound.breath(false); Sound.steps(true); Sound.pant(true); Sound.chase('run');
+  $('runBtn').hidden = true;
+  await wait(2000);
+  Sound.steps(false); rv.classList.add('stop');        // stop, out of breath
+  await wait(500);
+  bx.hidden = false; void bx.offsetWidth; bx.classList.add('near');   // a box, right there
+  await wait(900); bx.focus();
+  busy = false;
+});
+/* into the box: dark, the hunt outside, then silence, then light */
+onTap($('hideBox'), async () => {
+  busy = true;
+  $('hideBox').classList.add('enter'); $('runview').classList.add('stop');
+  Sound.steps(false); Sound.boxIn(); Sound.chase('box');
+  await wait(550);
+  const h = $('hide'); h.className = 'scene'; $('slit').classList.remove('on'); $('rcat').className = 'rcat'; $('rglow').classList.remove('on');
+  show('hide');
+  await wait(400); Sound.pant(false); Sound.breathLevel(.55); Sound.breath(true);
+  await wait(700);
+  Sound.chase('box'); Sound.chaos(true); await wait(5600);                 // claws on the cardboard, cats everywhere
+  Sound.chaos(false, 3.2); Sound.chase(false, 3.2); setTimeout(() => Sound.breath(false), 2200);
+  await wait(3400 + 3000);                             // fade, then three seconds of nothing
+  $('slit').classList.add('on'); Sound.flap(); await wait(1000);
+  h.classList.add('open'); await wait(2200);           // the gap widens
+  $('rcat').classList.add('in'); Sound.meow({pitch:1.12, gain:.1, dur:.6, delay:1.2}); await wait(3400);   // a cat looking in
+  $('rglow').classList.add('on'); Sound.duck(.8, 6);  // brighter and brighter
+  await wait(1600); $('whiteout').classList.add('on'); await wait(3300);
+  $('tv').classList.remove('on'); $('hTable').hidden = false; $('hHomeWin').hidden = false;
+  document.querySelectorAll('#home .food').forEach(f => f.remove());
+  show('home'); await wait(700);
+  $('whiteout').classList.remove('on'); await wait(2400);
+  busy = false;
+});
+/* ---- the new home ---- */
+let menuMode = 'door';
+onTap($('hHomeWin'), () => { busy = true; $('sunny').classList.add('on'); Sound.birds(true); setTimeout(() => busy = false, 400); });
+onTap($('hTable'), () => { menuMode = 'home'; $('menu').classList.add('on'); document.querySelector('.opt').focus(); });
+async function homeNews(b){
+  $('menu').classList.remove('on'); busy = true; $('hTable').hidden = true; $('hHomeWin').hidden = true;
+  await wait(800);
+  Sound.tvOn(); $('tv').classList.add('on'); Sound.duck(.12, 1);
+  await wait(1100); Sound.tv(true);
+  await bareLine('tv', 'Good morning. This is the Human Show News.');
+  await bareLine('tv', 'Last year, the champion went into cardiac arrest on the judging table, fainted, and went into shock.');
+  await bareLine('tv', 'Since then, the Human Show has updated its standards. Health is now part of the judging.');
+  await bareLine('tv', 'Under the new rules, the champion of this year’s Human Show is… Meow-meow-meow!');
+  $('talk').classList.remove('bare'); Sound.tv(false); Sound.duck(.8, 2);
+  busy = true; await wait(900);
+  const f = document.createElement('img');
+  f.className = 'food'; f.src = 'img/' + b.dataset.food + '.png'; f.alt = b.getAttribute('aria-label');
+  f.style.height = b.dataset.food === 'apple' ? '9%' : '12%';
+  f.style.left = '47%'; f.style.bottom = '17%'; f.tabIndex = 0; f.setAttribute('role', 'button');
+  $('home').appendChild(f); f.focus();
+  Sound.meow({gain:.13, dur:.7, delay:.15});
+  busy = false;
+  const eat = () => { if (busy) return; busy = true; theEnd(f); };
+  f.addEventListener('click', eat);
+  f.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') eat(); });
+}
+async function theEnd(f){
+  busy = true; Sound.chew(true); Sound.duck(0, 3);
+  f.style.transition = 'all .5s'; f.style.transform = 'scale(.4)'; f.style.opacity = '0';
+  await wait(600);
+  $('fade').classList.remove('out'); await wait(1400);
+  $('thanks').classList.add('on');                     // still chewing
+  await wait(1500); Sound.chew(false, 1.5);            // then it fades away
+  await wait(1700); $('again').hidden = false; $('again').focus();
+}
+onTap($('hGap'), async () => {
+  busy = true; $('hGap').hidden = true;
+  const fd = $('fade');
+  Sound.footstep(-.2, .4); setTimeout(() => Sound.footstep(.2, .4), 480);
+  fd.classList.remove('out'); await wait(1300);
+  show('corridor'); Sound.eerie(true); await wait(400);
+  fd.classList.add('out'); await wait(900);
+  busy = false;
+});
+async function nextDay(){
+  if (day >= LAST_DAY) return endOfDemo();
+  day++; windowSeen = false; talkedSibs = false;
+  await fadeThrough(() => { show('roomA'); refresh(); });
+  busy = false;
+}
+async function endOfDemo(){
+  busy = true;
+  $('fade').classList.remove('out'); await wait(1000);
+  $('again').hidden = false; $('again').focus();
+}
+$('again').addEventListener('click', start);
+$('again2').addEventListener('click', e => { e.stopPropagation(); $('again2').hidden = true; start(); });
+
+async function start(){
+  day = 1; windowSeen = false; talkedSibs = false; busy = true; Sound.duck(1, 1.5); Sound.hall(0); Sound.breath(false); Sound.eerie(false); lightOn = false; wallSeen = new Set(); screamed = false; $('turn').hidden = true; $('talk').classList.remove('bare','nobox');
+  $('again').hidden = true; $('thanks').classList.remove('on'); $('endPop').classList.remove('on'); Sound.chew(false); menuMode = 'door';
+  resetFallen(); $('whiteout').classList.remove('on'); $('tv').classList.remove('on');
+  Sound.steps(false); Sound.pant(false); Sound.heart(false); Sound.chaos(false); Sound.chase(false); Sound.tv(false);
+  document.querySelectorAll('.food').forEach(f => f.remove());
+  await fadeThrough(() => { show('roomA'); refresh(); });
+  busy = false;
+}
+
+
+/* ---- sound: everything is generated in the browser, no audio files ---- */
+const Sound = (() => {
+  let ctx, master, musicBus, sfxBus, wet, muted = false, started = false, birdTimer = null;
+  try { muted = localStorage.getItem('hs-muted') === '1'; } catch(_){}
+  const NOTE = n => { const m = {C:0,'C#':1,D:2,Eb:3,E:4,F:5,'F#':6,G:7,Ab:8,A:9,Bb:10,B:11}; const k = n.slice(0,-1), o = +n.slice(-1); return 440 * Math.pow(2, (m[k] + (o-4)*12 - 9)/12); };
+
+  function init(){
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ctx.destination);
+    // soft room reverb
+    const len = ctx.sampleRate * 2.4, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++){ const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 3); }
+    const verb = ctx.createConvolver(); verb.buffer = ir; reverbIn = verb;
+    wet = ctx.createGain(); wet.gain.value = .32; verb.connect(wet); wet.connect(master);
+    musicBus = ctx.createGain(); musicBus.gain.value = .0; musicBus.connect(master); musicBus.connect(verb);
+    sfxBus = ctx.createGain(); sfxBus.gain.value = .55; sfxBus.connect(master); sfxBus.connect(verb);
+    // a big empty room: slapback echo for footsteps and far-off cats
+    hallIn = ctx.createGain(); const dl = ctx.createDelay(1), fb = ctx.createGain(), hlp = ctx.createBiquadFilter(), hout = ctx.createGain();
+    dl.delayTime.value = .2; fb.gain.value = .22; hlp.type = 'lowpass'; hlp.frequency.value = 1800; hout.gain.value = .32;
+    hallIn.connect(dl); dl.connect(hlp); hlp.connect(fb); fb.connect(dl); hlp.connect(hout); hout.connect(master); hout.connect(verb);
+    ambBus = ctx.createGain(); ambBus.gain.value = 0; ambBus.connect(master);
+    loadLock();
+  }
+  let hallIn, ambBus, ambTimers = [], reverbIn = null;
+
+  /* music box voice: a bright tine that rings and fades */
+  function tine(freq, t, vel = 1, bus, bend = 0){
+    const out = ctx.createGain(); out.connect(bus || musicBus);
+    [[1, .22], [2, .06], [5.4, .018]].forEach(([mul, amp]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(freq * mul, t);
+      if (bend) o.frequency.linearRampToValueAtTime(freq * mul * Math.pow(2, bend/12), t + 1.8);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(amp * vel, t + .004);
+      g.gain.exponentialRampToValueAtTime(.0001, t + (mul > 1 ? .5 : 1.9));
+      o.connect(g); g.connect(out); o.start(t); o.stop(t + 2);
+    });
+  }
+  function bass(freq, t, len){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.06, t + .03); g.gain.exponentialRampToValueAtTime(.0001, t + len);
+    o.connect(g); g.connect(musicBus); o.start(t); o.stop(t + len + .05);
+  }
+
+  /* an original little waltz in F, 3/4 */
+  const MEL = [
+    [['C5',1],['A4',1],['F4',1]], [['G4',1],['A4',1],['C5',1]], [['D5',2],['C5',1]], [['A4',3]],
+    [['Bb4',1],['D5',1],['F5',1]], [['E5',1],['D5',1],['Bb4',1]], [['C5',1],['E5',1],['G5',1]], [['F5',2],['E5',1]],
+    [['F5',1],['C5',1],['A4',1]], [['E5',1],['C5',1],['A4',1]], [['D5',1.5],['C5',.5],['Bb4',1]], [['A4',1],['C5',1],['F5',1]],
+    [['G5',1],['F5',1],['D5',1]], [['E5',1],['C5',1],['G4',1]], [['A4',1],['C5',1],['F5',1]], [['F4',3]]
+  ];
+  const CHORD = [['F3','C4'],['F3','C4'],['D3','A3'],['D3','A3'],['Bb2','F3'],['Bb2','F3'],['C3','G3'],['C3','G3'],
+                 ['F3','C4'],['A2','E3'],['Bb2','F3'],['F3','C4'],['G2','D3'],['C3','G3'],['F3','C4'],['F3','C4']];
+  const BEAT = 60 / 92;
+  let bar = 0, nextBar = 0, sched = null;
+  function scheduleBar(t){
+    MEL[bar].reduce((at, [n, b]) => { tine(NOTE(n), at, .9 + Math.random()*.15); return at + b*BEAT; }, t);
+    const [r, f] = CHORD[bar];
+    bass(NOTE(r), t, BEAT*2.6);
+    tine(NOTE(f), t + BEAT, .35); tine(NOTE(f), t + BEAT*2, .3);
+    bar = (bar + 1) % MEL.length;
+  }
+  function startMusic(){
+    nextBar = ctx.currentTime + .3;
+    musicBus.gain.setTargetAtTime(1, ctx.currentTime, 1.2);
+    sched = setInterval(() => { while (nextBar < ctx.currentTime + .4){ scheduleBar(nextBar); nextBar += BEAT*3; } }, 60);
+  }
+  function duck(level, secs = .8){ if (ctx) musicBus.gain.setTargetAtTime(level, ctx.currentTime, secs/3); }
+
+  /* soft wooden knock */
+  function knock(){
+    if (!ctx) return; const t = ctx.currentTime;
+    const o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+    o.type = 'sine'; o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(95, t + .12);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.32, t + .005); g.gain.exponentialRampToValueAtTime(.0001, t + .22);
+    lp.type = 'lowpass'; lp.frequency.value = 700;
+    o.connect(lp); lp.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + .25);
+    const n = noise(.06), ng = ctx.createGain(), bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = .8;
+    ng.gain.setValueAtTime(.12, t); ng.gain.exponentialRampToValueAtTime(.0001, t + .06);
+    n.connect(bp); bp.connect(ng); ng.connect(sfxBus); n.start(t);
+  }
+  /* gentle latch click and a low, slow creak */
+  function door(){
+    if (!ctx) return; const t = ctx.currentTime;
+    const c = noise(.03), cg = ctx.createGain(), hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 1800;
+    cg.gain.setValueAtTime(.3, t); cg.gain.exponentialRampToValueAtTime(.0001, t + .04);
+    c.connect(hp); hp.connect(cg); cg.connect(sfxBus); c.start(t);
+    const o = ctx.createOscillator(), g = ctx.createGain(), bp = ctx.createBiquadFilter(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(130, t + .12); o.frequency.linearRampToValueAtTime(175, t + .9);
+    lfo.frequency.value = 23; lg.gain.value = 9; lfo.connect(lg); lg.connect(o.frequency);
+    bp.type = 'bandpass'; bp.frequency.value = 520; bp.Q.value = 3;
+    g.gain.setValueAtTime(.0001, t + .12); g.gain.linearRampToValueAtTime(.16, t + .32); g.gain.linearRampToValueAtTime(.11, t + .75); g.gain.exponentialRampToValueAtTime(.0001, t + 1.15);
+    o.connect(bp); bp.connect(g); g.connect(sfxBus); o.start(t + .12); lfo.start(t + .12); o.stop(t + 1.2); lfo.stop(t + 1.2);
+    const th = ctx.createOscillator(), tg = ctx.createGain();
+    th.type = 'sine'; th.frequency.setValueAtTime(110, t + .02); th.frequency.exponentialRampToValueAtTime(60, t + .25);
+    tg.gain.setValueAtTime(.0001, t + .02); tg.gain.linearRampToValueAtTime(.22, t + .04); tg.gain.exponentialRampToValueAtTime(.0001, t + .35);
+    th.connect(tg); tg.connect(sfxBus); th.start(t + .02); th.stop(t + .4);
+  }
+  function meow(o2 = {}){
+    if (!ctx) return; const t = ctx.currentTime + (o2.delay || 0), d = o2.dur || .75, pm = o2.pitch || 1, vol = o2.gain || .16, dest = o2.bus === 'amb' ? ambBus : (o2.bus && o2.bus.connect) ? o2.bus : sfxBus;
+    const o = ctx.createOscillator(), g = ctx.createGain(), vib = ctx.createOscillator(), vg = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(520*pm, t); o.frequency.linearRampToValueAtTime(760*pm, t + d*.3); o.frequency.linearRampToValueAtTime(700*pm, t + d*.55); o.frequency.exponentialRampToValueAtTime(430*pm, t + d);
+    vib.frequency.value = o2.harsh ? 11 : 6; vg.gain.value = o2.sharp ? 0 : o2.harsh ? 40 : 8; vib.connect(vg); vg.connect(o.frequency);
+    const f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter(), lp = ctx.createBiquadFilter(), mix = ctx.createGain();
+    f1.type = 'bandpass'; f1.Q.value = 5; f1.frequency.setValueAtTime(800, t); f1.frequency.linearRampToValueAtTime(1300, t + .25); f1.frequency.linearRampToValueAtTime(750, t + d);
+    f2.type = 'bandpass'; f2.Q.value = 6; f2.frequency.setValueAtTime(2300, t); f2.frequency.linearRampToValueAtTime(1900, t + .3); f2.frequency.linearRampToValueAtTime(1100, t + d);
+    lp.type = 'lowpass'; lp.frequency.value = 3000;
+    o.connect(f1); o.connect(f2); f1.connect(mix); f2.connect(mix); mix.gain.value = 1; mix.connect(lp); lp.connect(g);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol, t + (o2.sharp ? .015 : .08)); g.gain.linearRampToValueAtTime(vol*.75, t + d*.6); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    if (o2.pan && ctx.createStereoPanner){ const pn = ctx.createStereoPanner(); pn.pan.value = o2.pan; g.connect(pn); pn.connect(dest); } else g.connect(dest); if (o2.echo){ const e = ctx.createGain(); e.gain.value = o2.echo; g.connect(e); e.connect(hallIn); } o.start(t); vib.start(t); o.stop(t + d + .05); vib.stop(t + d + .05);
+  }
+  function footstep(pan, echo = 0){
+    if (!ctx) return; const t = ctx.currentTime;
+    const n = noise(.12), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+    lp.type = 'lowpass'; lp.frequency.value = 520;
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.5, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .12);
+    const o = ctx.createOscillator(), og = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(85, t); o.frequency.exponentialRampToValueAtTime(55, t + .1);
+    og.gain.setValueAtTime(.0001, t); og.gain.linearRampToValueAtTime(.25, t + .008); og.gain.exponentialRampToValueAtTime(.0001, t + .14);
+    let out = sfxBus;
+    if (ctx.createStereoPanner){ const pn = ctx.createStereoPanner(); pn.pan.value = pan; pn.connect(sfxBus); out = pn; }
+    n.connect(lp); lp.connect(g); g.connect(out); o.connect(og); og.connect(out); n.start(t); o.start(t); o.stop(t + .16);
+    if (echo > 0){ const e = ctx.createGain(); e.gain.value = echo * .65; g.connect(e); og.connect(e); e.connect(hallIn); }
+  }
+  function slam(){
+    if (!ctx) return; const t = ctx.currentTime;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(75, t); o.frequency.exponentialRampToValueAtTime(38, t + .6);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.7, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .9);
+    const n = noise(.5), lp = ctx.createBiquadFilter(), ng = ctx.createGain();
+    lp.type = 'lowpass'; lp.frequency.value = 260;
+    ng.gain.setValueAtTime(.5, t); ng.gain.exponentialRampToValueAtTime(.0001, t + .5);
+    const e = ctx.createGain(); e.gain.value = .3;
+    o.connect(g); n.connect(lp); lp.connect(ng);
+    [g, ng].forEach(x => { x.connect(sfxBus); x.connect(e); }); e.connect(hallIn);
+    o.start(t); o.stop(t + 1); n.start(t);
+  }
+  function lock(){
+    if (!ctx) return; const t = ctx.currentTime;
+    [0, .09].forEach((dt, i) => {
+      const n = noise(.03), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+      bp.type = 'bandpass'; bp.frequency.value = i ? 3200 : 2300; bp.Q.value = 4;
+      g.gain.setValueAtTime(i ? 1.1 : .8, t + dt); g.gain.exponentialRampToValueAtTime(.0001, t + dt + .05);
+      n.connect(bp); bp.connect(g); g.connect(sfxBus); n.start(t + dt);
+      const p = ctx.createOscillator(), pg = ctx.createGain();
+      p.type = 'sine'; p.frequency.value = i ? 3900 : 2900;
+      pg.gain.setValueAtTime(.09, t + dt); pg.gain.exponentialRampToValueAtTime(.0001, t + dt + .14);
+      p.connect(pg); pg.connect(sfxBus); p.start(t + dt); p.stop(t + dt + .15);
+    });
+  }
+  /* metal lock: two bright metal-on-metal hits with ringing inharmonic partials */
+  /* the lock: your recording, with the synth version as a fallback */
+  let lockBuf = null;
+  let scratchBuf = null, scratchSrc = null, scratchGain = null;
+  let chaseBuf = null, chaseSrcs = [], chaseLp = null, chaseGain = null, chaseWet = null;
+  function loadLock(){
+    fetch('img/chase.mp3').then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b)).then(buf => { chaseBuf = buf; }).catch(() => {});
+    fetch('img/scratch.mp3').then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b)).then(buf => { scratchBuf = buf; }).catch(() => {});
+    fetch('img/lock.mp3').then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b)).then(buf => { lockBuf = buf; }).catch(() => {});
+  }
+  function latch(){
+    if (!ctx) return;
+    if (lockBuf){
+      const src = ctx.createBufferSource(), g = ctx.createGain();
+      src.buffer = lockBuf; g.gain.value = 1.6;
+      src.connect(g); g.connect(sfxBus); src.start();
+      return;
+    }
+    latchSynth();
+  }
+  function latchSynth(){
+    if (!ctx) return; const t0 = ctx.currentTime;
+    const hit = (t, base, vol) => {
+      const n = noise(.012), hp = ctx.createBiquadFilter(), ng = ctx.createGain();
+      hp.type = 'highpass'; hp.frequency.value = 3000;
+      ng.gain.setValueAtTime(vol * 1.6, t); ng.gain.exponentialRampToValueAtTime(.0001, t + .015);
+      n.connect(hp); hp.connect(ng); ng.connect(sfxBus); n.start(t);
+      [[1, 1, .18], [2.76, .6, .12], [5.4, .4, .08], [8.93, .25, .05]].forEach(([mul, amp, dec]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = base * mul;
+        g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol * amp, t + .002); g.gain.exponentialRampToValueAtTime(.0001, t + dec);
+        o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + dec + .02);
+      });
+    };
+    hit(t0, 1250, .5);
+    hit(t0 + .11, 1650, .7);
+  }
+  /* tense breathing in the dark, and a held breath when something is found */
+  let breathOn = false, breathTimer = null;
+  function breathe(kind, t, vol){
+    const len = kind === 'gasp' ? .32 : kind === 'in' ? .85 + Math.random()*.25 : 1.05 + Math.random()*.3;
+    const n = noise(len + .05), bp = ctx.createBiquadFilter(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+    bp.type = 'bandpass'; bp.Q.value = .9;
+    if (kind === 'out'){ bp.frequency.setValueAtTime(1150, t); bp.frequency.linearRampToValueAtTime(650, t + len); }
+    else { bp.frequency.setValueAtTime(1100, t); bp.frequency.linearRampToValueAtTime(kind === 'gasp' ? 2300 : 1700, t + len); }
+    lp.type = 'lowpass'; lp.frequency.value = 3200;
+    const peak = vol * (kind === 'gasp' ? 2.6 : 1), up = kind === 'gasp' ? .05 : len * .45;
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(peak, t + up);
+    // a slight shake in the breath
+    if (kind !== 'gasp'){ const sh = ctx.createOscillator(), sg = ctx.createGain(); sh.frequency.value = 7 + Math.random()*3; sg.gain.value = peak * .25; sh.connect(sg); sg.connect(g.gain); sh.start(t); sh.stop(t + len); }
+    g.gain.linearRampToValueAtTime(.0001, t + len);
+    n.connect(bp); bp.connect(lp); lp.connect(g); g.connect(sfxBus); n.start(t);
+    return len;
+  }
+  let breathLvl = 1;
+  function breathLevel(v){ breathLvl = v; }
+  function breathLoop(){
+    if (!breathOn) return;
+    const t = ctx.currentTime + .05;
+    const a = breathe('in', t, .036 * breathLvl), gap = .12 + Math.random()*.15, b = breathe('out', t + a + gap, .032 * breathLvl);
+    breathTimer = setTimeout(breathLoop, (a + gap + b + .25 + Math.random()*.35) * 1000);
+  }
+  function breath(on){
+    if (!ctx) return;
+    clearTimeout(breathTimer); breathOn = on;
+    if (on) breathTimer = setTimeout(breathLoop, 600);
+  }
+  function gasp(){
+    if (!ctx || !breathOn) return;
+    clearTimeout(breathTimer);
+    const t = ctx.currentTime + .02;
+    breathe('gasp', t, .036 * Math.max(.6, breathLvl));                         // sharp intake
+    // hold it... then a long, shaky release and back to quick breaths
+    breathTimer = setTimeout(() => {
+      if (!breathOn) return;
+      const t2 = ctx.currentTime + .02, l = breathe('out', t2, .04 * breathLvl);
+      breathTimer = setTimeout(breathLoop, (l + .35) * 1000);
+    }, 2600);
+  }
+  function purr(){
+    if (!ctx) return; const t = ctx.currentTime, len = 1.6;
+    const n = noise(len), lp = ctx.createBiquadFilter(), g = ctx.createGain(), am = ctx.createOscillator(), ag = ctx.createGain();
+    lp.type = 'lowpass'; lp.frequency.value = 260;
+    am.frequency.value = 26; ag.gain.value = .45; am.connect(ag); ag.connect(g.gain);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.55, t + .25); g.gain.linearRampToValueAtTime(.45, t + 1.1); g.gain.linearRampToValueAtTime(.0001, t + len);
+    n.connect(lp); lp.connect(g); g.connect(sfxBus); n.start(t); am.start(t); am.stop(t + len);
+  }
+  /* far-off hall: thin meows, purring, fur brushing the floor */
+  function hall(level, fast){
+    if (!ctx) return;
+    ambBus.gain.setTargetAtTime(level * .9, ctx.currentTime, fast ? .15 : 1);
+    if (level === 0){ ambTimers.forEach(clearTimeout); ambTimers = []; return; }
+    if (ambTimers.length) return;
+    const every = (fn, lo, hi) => { const go = () => { fn(); ambTimers.push(setTimeout(go, lo + Math.random()*(hi-lo))); }; ambTimers.push(setTimeout(go, Math.random()*lo)); };
+    every(() => meow({bus:'amb', pitch:1.2 + Math.random()*.6, gain:.009 + Math.random()*.007, dur:.4 + Math.random()*.4}), 3800, 7500);
+    every(() => {
+      const t = ctx.currentTime, len = 1.6 + Math.random()*1.4, n = noise(len), lp = ctx.createBiquadFilter(), g = ctx.createGain(), am = ctx.createOscillator(), ag = ctx.createGain();
+      lp.type = 'lowpass'; lp.frequency.value = 240;
+      am.frequency.value = 24 + Math.random()*4; ag.gain.value = .5; am.connect(ag); ag.connect(g.gain);
+      g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.17, t + .4); g.gain.linearRampToValueAtTime(.0001, t + len);
+      let out = ambBus; if (ctx.createStereoPanner){ const pn = ctx.createStereoPanner(); pn.pan.value = Math.random()*1.6 - .8; pn.connect(ambBus); out = pn; }
+      n.connect(lp); lp.connect(g); g.connect(out); n.start(t); am.start(t); am.stop(t + len);
+    }, 5500, 9500);
+    every(() => {
+      // a cat walking past: 3 to 6 soft pad taps, some with a tiny claw tick
+      const steps = 3 + Math.floor(Math.random()*4), pan = Math.random()*1.6 - .8, drift = (Math.random() - .5) * .4;
+      for (let k = 0; k < steps; k++){
+        const t = ctx.currentTime + k * (.16 + Math.random()*.06);
+        const n = noise(.025), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+        bp.type = 'bandpass'; bp.frequency.value = 1400 + Math.random()*500; bp.Q.value = 2;
+        g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.09, t + .003); g.gain.exponentialRampToValueAtTime(.0001, t + .025);
+        let out = ambBus; if (ctx.createStereoPanner){ const pn = ctx.createStereoPanner(); pn.pan.value = Math.max(-1, Math.min(1, pan + drift*k)); pn.connect(ambBus); out = pn; }
+        n.connect(bp); bp.connect(g); g.connect(out); n.start(t);
+        if (Math.random() < .5){
+          const c = noise(.01), hp = ctx.createBiquadFilter(), cg = ctx.createGain();
+          hp.type = 'highpass'; hp.frequency.value = 4500;
+          cg.gain.setValueAtTime(.05, t + .01); cg.gain.exponentialRampToValueAtTime(.0001, t + .02);
+          c.connect(hp); hp.connect(cg); cg.connect(out); c.start(t + .01);
+        }
+      }
+    }, 3000, 6000);
+  }
+  /* one sharp, sudden shriek */
+  function scream(){
+    if (!ctx) return;
+    meow({pitch: 2.3, gain: .42, dur: .85, sharp: true});
+    meow({pitch: 2.36, gain: .2, dur: .8, sharp: true, pan: .2});
+  }
+  /* a body falling, far away */
+  function fall(){
+    if (!ctx) return; const t = ctx.currentTime;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(48, t + .3);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.28, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + .45);
+    const n = noise(.35), lp = ctx.createBiquadFilter(), ng = ctx.createGain();
+    lp.type = 'lowpass'; lp.frequency.value = 380;
+    ng.gain.setValueAtTime(.18, t); ng.gain.exponentialRampToValueAtTime(.0001, t + .3);
+    const n2 = noise(.2), lp2 = ctx.createBiquadFilter(), ng2 = ctx.createGain();     // an arm hitting the floor a beat later
+    lp2.type = 'lowpass'; lp2.frequency.value = 500;
+    ng2.gain.setValueAtTime(.0001, t + .22); ng2.gain.linearRampToValueAtTime(.08, t + .23); ng2.gain.exponentialRampToValueAtTime(.0001, t + .35);
+    const e = ctx.createGain(); e.gain.value = .6;
+    o.connect(g); n.connect(lp); lp.connect(ng); n2.connect(lp2); lp2.connect(ng2);
+    [g, ng, ng2].forEach(x => { x.connect(sfxBus); x.connect(e); }); e.connect(hallIn);
+    o.start(t); o.stop(t + .5); n.start(t); n2.start(t + .2);
+  }
+  /* the home tune, slowed down and out of tune, over a low hum */
+  let eerieBus = null, eerieTimer = null, droneOsc = [];
+  function eerie(on){
+    if (!ctx) return;
+    if (!eerieBus){ eerieBus = ctx.createGain(); eerieBus.connect(master); const w = ctx.createGain(); w.gain.value = .9; eerieBus.connect(w); w.connect(reverbIn || master); }
+    clearTimeout(eerieTimer);
+    if (!on){
+      eerieBus.gain.cancelScheduledValues(ctx.currentTime); eerieBus.gain.setValueAtTime(0, ctx.currentTime);
+      droneOsc.forEach(o => { try { o.stop(); } catch(_){} }); droneOsc = [];
+      return;
+    }
+    eerieBus.gain.setValueAtTime(0, ctx.currentTime); eerieBus.gain.linearRampToValueAtTime(.9, ctx.currentTime + 3);
+    // drone: two low tones rubbing against each other
+    [[43.65, -1], [44.4, 1]].forEach(([f, pn]) => {
+      const o = ctx.createOscillator(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = f; lp.type = 'lowpass'; lp.frequency.value = 220; g.gain.value = .05;
+      let out = eerieBus; if (ctx.createStereoPanner){ const p = ctx.createStereoPanner(); p.pan.value = pn * .4; p.connect(eerieBus); out = p; }
+      o.connect(lp); lp.connect(g); g.connect(out); o.start(); droneOsc.push(o);
+    });
+    // the melody, note by note, with gaps
+    const notes = MEL.flat(); let k = 0;
+    const next = () => {
+      const [n, b] = notes[k % notes.length]; k++;
+      if (Math.random() > .3){
+        const detune = (Math.random() - .5) * .7, f = NOTE(n) * Math.pow(2, detune/12) * .5;
+        tine(f, ctx.currentTime + .02, .55, eerieBus, (Math.random() - .5) * .6);
+      }
+      eerieTimer = setTimeout(next, b * BEAT * 2.4 * 1000 * (0.9 + Math.random()*.4));
+    };
+    eerieTimer = setTimeout(next, 1500);
+  }
+  /* a breath of noise, for panting */
+  function puff(t, len, f0, f1, vol, dest){
+    const n = noise(len + .05), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+    bp.type = 'bandpass'; bp.Q.value = .8; bp.frequency.setValueAtTime(f0, t); bp.frequency.linearRampToValueAtTime(f1, t + len);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol, t + len * .3); g.gain.linearRampToValueAtTime(.0001, t + len);
+    n.connect(bp); bp.connect(g); g.connect(dest || sfxBus); n.start(t);
+  }
+  /* every eye turns at once: a dry hiss */
+  function hiss(){
+    if (!ctx) return; const t = ctx.currentTime;
+    const n = noise(1.6), hp = ctx.createBiquadFilter(), g = ctx.createGain();
+    hp.type = 'highpass'; hp.frequency.value = 2600;
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.09, t + .25); g.gain.exponentialRampToValueAtTime(.0001, t + 1.5);
+    n.connect(hp); hp.connect(g); g.connect(sfxBus); g.connect(hallIn); n.start(t);
+  }
+  /* heartbeat */
+  let heartTimer = null;
+  function thump(t, vol){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(62, t); o.frequency.exponentialRampToValueAtTime(38, t + .14);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + .2);
+    o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + .22);
+  }
+  function heart(on){
+    if (!ctx) return; clearTimeout(heartTimer); if (!on) return;
+    const beat = () => { const t = ctx.currentTime + .02; thump(t, .55); thump(t + .26, .38); heartTimer = setTimeout(beat, 780); };
+    beat();
+  }
+  /* turning around fast */
+  function whoosh(){
+    if (!ctx) return; const t = ctx.currentTime;
+    const n = noise(.6), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+    bp.type = 'bandpass'; bp.Q.value = 1.2; bp.frequency.setValueAtTime(400, t); bp.frequency.exponentialRampToValueAtTime(2400, t + .25); bp.frequency.exponentialRampToValueAtTime(500, t + .55);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.35, t + .2); g.gain.exponentialRampToValueAtTime(.0001, t + .55);
+    n.connect(bp); bp.connect(g); g.connect(sfxBus); n.start(t);
+  }
+  /* running feet, and panting */
+  let stepTimer = null, pantTimer = null;
+  function steps(on){
+    if (!ctx) return; clearInterval(stepTimer); if (!on) return;
+    let k = 0; stepTimer = setInterval(() => footstep(k++ % 2 ? .3 : -.3, .25), 265);
+  }
+  function pant(on){
+    if (!ctx) return; clearTimeout(pantTimer); if (!on) return;
+    const loop = () => {
+      const t = ctx.currentTime + .02, a = .2 + Math.random()*.05, b = .26 + Math.random()*.06;
+      puff(t, a, 1100, 1900, .07); puff(t + a + .04, b, 1300, 700, .085);
+      pantTimer = setTimeout(loop, (a + b + .1 + Math.random()*.06) * 1000);
+    };
+    loop();
+  }
+  /* diving into cardboard */
+  function boxIn(){
+    if (!ctx) return; const t = ctx.currentTime;
+    const n = noise(.45), bp = ctx.createBiquadFilter(), g = ctx.createGain(), am = ctx.createOscillator(), ag = ctx.createGain();
+    bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = .7;
+    am.frequency.value = 28; ag.gain.value = .12; am.connect(ag); ag.connect(g.gain);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.22, t + .03); g.gain.exponentialRampToValueAtTime(.0001, t + .45);
+    n.connect(bp); bp.connect(g); g.connect(sfxBus); n.start(t); am.start(t); am.stop(t + .5);
+    thump(t + .05, .45);
+  }
+  /* claws on cardboard: a few quick strokes */
+  function scratch(dest, pan, vol){
+    let out = dest; if (ctx.createStereoPanner){ const p = ctx.createStereoPanner(); p.pan.value = pan; p.connect(dest); out = p; }
+    const strokes = 2 + Math.floor(Math.random()*5); let t = ctx.currentTime + .01;
+    for (let i = 0; i < strokes; i++){
+      const len = .06 + Math.random()*.08, n = noise(len + .02), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+      bp.type = 'bandpass'; bp.Q.value = 1.4; bp.frequency.setValueAtTime(1800 + Math.random()*1600, t); bp.frequency.linearRampToValueAtTime(1200 + Math.random()*900, t + len);
+      g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol, t + .008); g.gain.linearRampToValueAtTime(vol * .6, t + len * .7); g.gain.exponentialRampToValueAtTime(.0001, t + len);
+      n.connect(bp); bp.connect(g); g.connect(out); n.start(t);
+      t += len + .03 + Math.random()*.08;
+    }
+  }
+  /* the hunt outside the box: cats at every distance, claws on the cardboard */
+  let chaosBus = null, chaosTimers = [];
+  function chaos(on, fade = 0){
+    if (!ctx) return;
+    if (!chaosBus){ chaosBus = ctx.createGain(); const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600; chaosBus.connect(lp); lp.connect(master); const w = ctx.createGain(); w.gain.value = .35; lp.connect(w); w.connect(reverbIn); }
+    const t = ctx.currentTime;
+    if (!on){
+      chaosBus.gain.cancelScheduledValues(t); chaosBus.gain.setValueAtTime(chaosBus.gain.value, t); chaosBus.gain.linearRampToValueAtTime(0, t + fade);
+      if (scratchGain){ scratchGain.gain.cancelScheduledValues(t); scratchGain.gain.setValueAtTime(scratchGain.gain.value, t); scratchGain.gain.linearRampToValueAtTime(0, t + fade); }
+      const src = scratchSrc; scratchSrc = null;
+      setTimeout(() => { chaosTimers.forEach(clearTimeout); chaosTimers = []; if (src) try { src.stop(); } catch(_){} }, fade * 1000 + 50);
+      return;
+    }
+    chaosTimers.forEach(clearTimeout); chaosTimers = [];
+    chaosBus.gain.cancelScheduledValues(t); chaosBus.gain.setValueAtTime(0, t); chaosBus.gain.linearRampToValueAtTime(1, t + .5);
+    const meows = () => {
+      const r = Math.random();
+      meow({bus: chaosBus, pitch: .65 + Math.random()*1.5, gain: .02 + r*r*.3, dur: .22 + Math.random()*.8, harsh: Math.random() < .4, pan: Math.random()*1.8 - .9});
+      chaosTimers.push(setTimeout(meows, Math.random() < .3 ? 60 + Math.random()*120 : 200 + Math.random()*700));
+    };
+    const claws = () => {
+      scratch(chaosBus, Math.random()*1.6 - .8, .08 + Math.random()*.22);
+      if (Math.random() < .25) thump(ctx.currentTime + .02, .15 + Math.random()*.25);
+      chaosTimers.push(setTimeout(claws, 250 + Math.random()*900));
+    };
+    if (!chaseBuf) meows();
+    if (scratchBuf){                                   // your recording of claws on cardboard, looped
+      if (!scratchGain){ scratchGain = ctx.createGain(); scratchGain.connect(master); }
+      scratchGain.gain.cancelScheduledValues(t); scratchGain.gain.setValueAtTime(0, t); scratchGain.gain.linearRampToValueAtTime(1, t + .3);
+      scratchSrc = ctx.createBufferSource(); scratchSrc.buffer = scratchBuf; scratchSrc.loop = true; scratchSrc.connect(scratchGain); scratchSrc.start(t + .2);
+    } else chaosTimers.push(setTimeout(claws, 300));
+  }
+  /* the box flap lifting */
+  function flap(){
+    if (!ctx) return; const t = ctx.currentTime;
+    const n = noise(1.1), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+    bp.type = 'bandpass'; bp.Q.value = .9; bp.frequency.setValueAtTime(700, t); bp.frequency.linearRampToValueAtTime(1300, t + 1);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.06, t + .3); g.gain.linearRampToValueAtTime(.04, t + .7); g.gain.exponentialRampToValueAtTime(.0001, t + 1.1);
+    n.connect(bp); bp.connect(g); g.connect(sfxBus); n.start(t);
+  }
+  /* the TV: a click, then a cat reading the news */
+  function tvOn(){
+    if (!ctx) return; const t = ctx.currentTime;
+    const c = noise(.03), hp = ctx.createBiquadFilter(), cg = ctx.createGain();
+    hp.type = 'highpass'; hp.frequency.value = 1500;
+    cg.gain.setValueAtTime(.25, t); cg.gain.exponentialRampToValueAtTime(.0001, t + .04);
+    c.connect(hp); hp.connect(cg); cg.connect(sfxBus); c.start(t);
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 7800;
+    g.gain.setValueAtTime(.0001, t + .05); g.gain.linearRampToValueAtTime(.012, t + .1); g.gain.exponentialRampToValueAtTime(.0001, t + .6);
+    o.connect(g); g.connect(sfxBus); o.start(t + .05); o.stop(t + .65);
+  }
+  let tvBus = null, tvTimer = null;
+  function tv(on){
+    if (!ctx) return; clearTimeout(tvTimer); if (!on) return;
+    if (!tvBus){ tvBus = ctx.createGain(); tvBus.gain.value = 1; const hp = ctx.createBiquadFilter(), lp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 500; lp.type = 'lowpass'; lp.frequency.value = 3200; tvBus.connect(hp); hp.connect(lp); lp.connect(sfxBus); }
+    const phrase = () => {
+      const n = 2 + Math.floor(Math.random()*4), base = .85 + Math.random()*.35; let at = 0;
+      for (let i = 0; i < n; i++){
+        const d = .18 + Math.random()*.3;
+        meow({bus: tvBus, pitch: base * (.85 + Math.random()*.35) * (i === n - 1 ? .9 : 1), gain: .1 + Math.random()*.05, dur: d, delay: at, sharp: Math.random() < .3});
+        at += d + .04 + Math.random()*.08;
+      }
+      tvTimer = setTimeout(phrase, (at + .45 + Math.random()*.6) * 1000);
+    };
+    phrase();
+  }
+  /* chewing: soft jaw thuds with a little crunch */
+  let chewTimer = null, chewBus = null;
+  function chew(on, fade = 0){
+    if (!ctx) return;
+    if (!chewBus){ chewBus = ctx.createGain(); chewBus.connect(sfxBus); }
+    const t0 = ctx.currentTime;
+    chewBus.gain.cancelScheduledValues(t0); chewBus.gain.setValueAtTime(chewBus.gain.value, t0);
+    if (!on){ chewBus.gain.linearRampToValueAtTime(0, t0 + fade); setTimeout(() => clearTimeout(chewTimer), fade * 1000); if (!fade) clearTimeout(chewTimer); return; }
+    clearTimeout(chewTimer); chewBus.gain.setValueAtTime(1, t0);
+    const bite = () => {
+      const t = ctx.currentTime + .01;
+      const n = noise(.16), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+      lp.type = 'lowpass'; lp.frequency.value = 700 + Math.random()*300;
+      g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.32, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .15);
+      n.connect(lp); lp.connect(g); g.connect(chewBus); n.start(t);
+      for (let i = 0; i < 3; i++){                     // crunch
+        const ct = t + .01 + Math.random()*.09, c = noise(.03), bp = ctx.createBiquadFilter(), cg = ctx.createGain();
+        bp.type = 'bandpass'; bp.frequency.value = 2200 + Math.random()*1800; bp.Q.value = 1.5;
+        cg.gain.setValueAtTime(.0001, ct); cg.gain.linearRampToValueAtTime(.06 + Math.random()*.05, ct + .003); cg.gain.exponentialRampToValueAtTime(.0001, ct + .03);
+        c.connect(bp); bp.connect(cg); cg.connect(chewBus); c.start(ct);
+      }
+      chewTimer = setTimeout(bite, 300 + Math.random()*90);
+    };
+    bite();
+  }
+  /* your recording of cats: behind you in the corridor, then outside the box */
+  function chase(mode, fade = 0){
+    if (!ctx || !chaseBuf && mode) return;
+    const t = ctx.currentTime;
+    if (!chaseGain){
+      chaseLp = ctx.createBiquadFilter(); chaseLp.type = 'lowpass'; chaseLp.Q.value = .7;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 140;
+      chaseGain = ctx.createGain(); chaseGain.gain.value = 0;
+      chaseWet = ctx.createGain(); chaseWet.gain.value = 0;
+      chaseLp.connect(hp); hp.connect(chaseGain); chaseGain.connect(master); chaseGain.connect(chaseWet); chaseWet.connect(reverbIn); chaseWet.connect(hallIn);
+    }
+    const g = chaseGain.gain, f = chaseLp.frequency, w = chaseWet.gain;
+    [g, f, w].forEach(p => { p.cancelScheduledValues(t); p.setValueAtTime(p.value, t); });
+    if (!mode){
+      g.linearRampToValueAtTime(0, t + fade);
+      const old = chaseSrcs; chaseSrcs = [];
+      setTimeout(() => old.forEach(s => { try { s.stop(); } catch(_){} }), fade * 1000 + 60);
+      return;
+    }
+    if (!chaseSrcs.length){
+      // two copies, offset and slightly retuned, so it sounds like more than one cat
+      [[0, 1, -.45, 1], [2.4, .93, .5, .7]].forEach(([dl, rate, pan, vol]) => {
+        const src = ctx.createBufferSource(), sg = ctx.createGain(); src.buffer = chaseBuf; src.loop = true; src.playbackRate.value = rate; sg.gain.value = vol;
+        let out = sg; if (ctx.createStereoPanner){ const pn = ctx.createStereoPanner(); pn.pan.value = pan; sg.connect(pn); out = pn; }
+        src.connect(sg); out.connect(chaseLp); src.start(t + dl); chaseSrcs.push(src);
+      });
+    }
+    if (mode === 'run'){                               // some distance away, echoing down the corridor
+      f.linearRampToValueAtTime(3000, t + .3); g.linearRampToValueAtTime(.55, t + 1.2); w.linearRampToValueAtTime(.9, t + .5);
+    } else {                                           // through cardboard: close, muffled, louder
+      f.linearRampToValueAtTime(700, t + .35); g.linearRampToValueAtTime(1.5, t + .5); w.linearRampToValueAtTime(.15, t + .4);
+    }
+  }
+  function wetIn(){ return reverbIn; }
+  function noise(len){
+    const b = ctx.createBuffer(1, Math.ceil(ctx.sampleRate*len), ctx.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random()*2-1;
+    const s = ctx.createBufferSource(); s.buffer = b; return s;
+  }
+  /* small songbirds, scattered left and right */
+  function chirp(t, base, pan){
+    const p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    const out = ctx.createGain(); out.gain.value = .05;
+    if (p){ p.pan.value = pan; out.connect(p); p.connect(sfxBus); } else out.connect(sfxBus);
+    const notes = 2 + Math.floor(Math.random()*4);
+    for (let i = 0; i < notes; i++){
+      const st = t + i * (.07 + Math.random()*.05), o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(base * (1 + Math.random()*.15), st);
+      o.frequency.exponentialRampToValueAtTime(base * (1.35 + Math.random()*.3), st + .05);
+      o.frequency.exponentialRampToValueAtTime(base * .9, st + .09);
+      g.gain.setValueAtTime(.0001, st); g.gain.linearRampToValueAtTime(1, st + .01); g.gain.exponentialRampToValueAtTime(.0001, st + .1);
+      o.connect(g); g.connect(out); o.start(st); o.stop(st + .12);
+    }
+  }
+  function birds(on){
+    if (!ctx) return;
+    clearTimeout(birdTimer);
+    if (!on){ duck(1); return; }
+    duck(.55);
+    const loop = () => {
+      const voices = [[2600, -.6], [3300, .5], [2100, .1]];
+      const [b, pan] = voices[Math.floor(Math.random()*voices.length)];
+      chirp(ctx.currentTime + .05, b, pan + (Math.random()-.5)*.3);
+      if (Math.random() < .35) chirp(ctx.currentTime + .45, b * 1.05, pan);
+      birdTimer = setTimeout(loop, 500 + Math.random()*1300);
+    };
+    loop();
+  }
+
+  function unlock(){
+    init();
+    if (ctx.state === 'suspended') ctx.resume();
+    if (!started){ started = true; startMusic(); }
+  }
+  function setMuted(m){
+    muted = m;
+    try { localStorage.setItem('hs-muted', m ? '1' : '0'); } catch(_){}
+    if (ctx) master.gain.setTargetAtTime(m ? 0 : 1, ctx.currentTime, .1);
+    $('sndWaves').style.display = m ? 'none' : ''; $('sndOff').style.display = m ? '' : 'none';
+    $('snd').setAttribute('aria-label', m ? 'Turn sound on' : 'Mute sound');
+  }
+  return { unlock, knock, door, meow, scream, fall, eerie, hiss, heart, whoosh, chew, chase, steps, pant, boxIn, chaos, flap, tvOn, tv, footstep, slam, lock: latch, hall, breath, gasp, breathLevel, purr, birds, duck, setMuted, get muted(){ return muted; } };
+})();
+['pointerdown','keydown'].forEach(ev => document.addEventListener(ev, () => Sound.unlock(), {capture:true}));
+$('snd').addEventListener('click', e => { e.stopPropagation(); Sound.unlock(); Sound.setMuted(!Sound.muted); });
+Sound.setMuted(Sound.muted);
+
+/* ---- full screen ---- */
+$('fs').addEventListener('click', e => {
+  e.stopPropagation();
+  try { document.fullscreenElement ? document.exitFullscreen() : $('stage').requestFullscreen().catch(()=>{}); } catch(_){}
+});
+
+start();
+</script>
+
+</body>
+</html>
